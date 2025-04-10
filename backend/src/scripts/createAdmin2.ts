@@ -6,22 +6,23 @@ import { UserModel } from '../models/user.model';
 // Cargar variables de entorno
 dotenv.config({ path: '../../.env' });
 
-const createAdmin = async () => {
+const createSecondAdmin = async () => {
   try {
     // Verificar conexion
     await mongoose.connect(process.env.MONGODB_URI!);
 
     // Verificar si existe el admin
-    const existingAdmin = await UserModel.findOne({ username: "admin" });
+    const existingAdmin = await UserModel.findOne({ username: "tomi" });
     if (existingAdmin) {
+      console.log('El usuario tomi ya existe');
       process.exit(0);
     }
 
     const adminData = {
-      username: "admin",
-      email: "camilo.zntn30@gmail.com",
+      username: "tomi",
+      email: "thms.ramos0328@gmail.com",
       password: await bcrypt.hash("123", 10),
-      name: "Camilo",
+      name: "Thomas",
       role: "admin",
       status: "active", 
       isVerified: true
@@ -29,6 +30,7 @@ const createAdmin = async () => {
 
     const admin = new UserModel(adminData);
     await admin.save();
+    console.log('Administrador tomi creado exitosamente');
 
     process.exit(0);
   } catch (error) {
@@ -43,4 +45,4 @@ const createAdmin = async () => {
   }
 };
 
-createAdmin();
+createSecondAdmin();
