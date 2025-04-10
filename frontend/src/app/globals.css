@@ -1,0 +1,104 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background-primary: #FFFFFF;
+    --background-secondary: #F5F5F5;
+    --background-overlay: #F3F4F680;
+    --button-primary: #4F46E5;
+    --button-hover: #4338CA;
+    --text-primary: #000000;
+    --text-secondary: #374151;
+    --text-label: #272727;
+    --text-error: #DC2626;
+    --text-success: #059669;
+  }
+
+  [data-theme="dark"] {
+    --background-primary: #1F2937;
+    --background-secondary: #111827;
+    --background-overlay: #11182780;
+    --text-primary: #FFFFFF;
+    --text-secondary: #E5E7EB;
+    --text-label: #D1D5DB;
+    --text-error: #F87171;
+    --text-success: #4ADE80;
+  }
+}
+
+@layer components {
+  .bg-primary {
+    background-color: var(--background-primary);
+  }
+  .bg-secondary {
+    background-color: var(--background-secondary);
+  }
+  .text-primary {
+    color: var(--text-primary);
+  }
+  .text-secondary {
+    color: var(--text-secondary);
+  }
+  .btn-primary {
+    background-color: var(--button-primary);
+    color: white;
+  }
+  .btn-primary:hover {
+    background-color: var(--button-hover);
+  }
+}
+
+/* Al inicio del archivo */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  cursor: default !important;
+}
+
+html, body {
+  overflow-x: hidden;
+  background-color: var(--background-primary);
+}
+
+/* Solo para elementos de entrada de texto */
+input[type="text"],
+input[type="password"],
+input[type="email"],
+input[type="number"],
+input[type="search"],
+input[type="tel"],
+input[type="url"],
+textarea {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+  cursor: text !important;
+}
+
+/* Para elementos clickeables */
+button,
+a,
+[role="button"],
+.btn,
+select,
+input[type="submit"],
+input[type="button"] {
+  cursor: pointer !important;
+}
+
+/* Especificamente para elementos editable */
+[contenteditable="true"] {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+  cursor: text !important;
+}
