@@ -26,6 +26,10 @@ interface Commerce {
   name: string;
   description: string;
   imageUrl: string;
+  category: {
+    _id: string;
+    name: string;
+  };
   schedule: Schedule;
 }
 
@@ -34,11 +38,13 @@ export default function CommercePage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [commerces, setCommerces] = useState<Commerce[]>([]);
+  const [categories, setCategories] = useState<{ _id: string; name: string; }[]>([]); // Add this line
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     imageUrl: '',
     imageFile: null as File | null,
+    category: '',  // Add this
     schedule: {
       monday: { start: '09:00', end: '18:00', isClosed: false },
       tuesday: { start: '09:00', end: '18:00', isClosed: false },
@@ -104,8 +110,25 @@ export default function CommercePage() {
     }
   };
 
+  const fetchCategories = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/categories', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (!response.ok) throw new Error('Error loading categories');
+      const data = await response.json();
+      setCategories(data.categories);
+    } catch (error) {
+      toast.error('Error loading categories');
+    }
+  };
+
   useEffect(() => {
     fetchCommerces();
+    fetchCategories(); // Add this line
     const interval = setInterval(fetchCommerces, 60000);
     return () => clearInterval(interval);
   }, []);
@@ -123,6 +146,7 @@ export default function CommercePage() {
       formDataToSend.append('name', formData.name);
       formDataToSend.append('description', formData.description);
       formDataToSend.append('schedule', JSON.stringify(formData.schedule));
+      formDataToSend.append('category', formData.category);  // Add this
       if (formData.imageFile) {
         formDataToSend.append('image', formData.imageFile);
       }
@@ -148,6 +172,7 @@ export default function CommercePage() {
         description: '',
         imageUrl: '',
         imageFile: null,
+        category: '',  
         schedule: {
           monday: { start: '09:00', end: '18:00', isClosed: false },
           tuesday: { start: '09:00', end: '18:00', isClosed: false },
@@ -177,6 +202,7 @@ export default function CommercePage() {
               description: '',
               imageUrl: '',
               imageFile: null,
+              category: '', 
               schedule: {
                 monday: { start: '09:00', end: '18:00', isClosed: false },
                 tuesday: { start: '09:00', end: '18:00', isClosed: false },
@@ -254,6 +280,7 @@ export default function CommercePage() {
                           description: commerce.description,
                           imageUrl: commerce.imageUrl,
                           imageFile: null,
+                          category: commerce.category._id,  // Add this
                           schedule: parsedSchedule
                         });
                         setEditingId(commerce._id);
@@ -325,6 +352,25 @@ export default function CommercePage() {
                   rows={3}
                   required
                 />
+              </div>
+
+              <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Categoría
+                </label>
+                <select
+                  value={formData.category}
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  className="w-full p-2 border rounded-md"
+                  required
+                >
+                  <option value="">Seleccionar categoría</option>
+                  {categories.map((category) => (
+                    <option key={category._id} value={category._id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>

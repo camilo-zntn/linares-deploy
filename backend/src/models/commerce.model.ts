@@ -21,7 +21,8 @@ interface ICommerce {
   name: string;
   description: string;
   imageUrl: string;
-  image?: Express.Multer.File;  
+  image?: Express.Multer.File;
+  category: Schema.Types.ObjectId;  
   schedule: Schedule;
   createdAt: Date;
   updatedAt: Date;
@@ -48,6 +49,11 @@ const commerceSchema = new Schema<ICommerce>({
     type: String,
     required: [true, 'Image URL is required'],
     trim: true
+  },
+  category: {
+    type: Schema.Types.ObjectId,
+    ref: 'Category',
+    required: [true, 'Category is required']
   },
   schedule: {
     monday: dayScheduleSchema,

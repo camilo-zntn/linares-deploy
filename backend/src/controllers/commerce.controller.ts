@@ -43,7 +43,9 @@ export const commerceController = {
   // Get all commerces
   getCommerces: async (_req: Request, res: Response) => {
     try {
-      const commerces = await CommerceModel.find().sort({ createdAt: -1 });
+      const commerces = await CommerceModel.find()
+        .populate('category', 'name')  // Add this line
+        .sort({ createdAt: -1 });
       res.status(200).json({
         success: true,
         commerces,
@@ -73,7 +75,8 @@ export const commerceController = {
       const commerceData = {
         ...req.body,
         schedule: JSON.parse(req.body.schedule),
-        imageUrl
+        imageUrl,
+        category: req.body.category  // Add this line
       };
 
       const newCommerce = new CommerceModel(commerceData);
@@ -101,6 +104,21 @@ export const commerceController = {
       let updateData = { ...req.body };
 
       if (req.file) {
+        // Obtener el comercio actual para encontrar la imagen existente
+        const oldCommerce = await CommerceModel.findById(id);
+        if (oldCommerce?.imageUrl) {
+          // Obtener la ruta absoluta del archivo
+          const oldImagePath = path.join(__dirname, '../..', oldCommerce.imageUrl);
+          try {
+            // Intentar eliminar el archivo anterior
+            await fs.unlink(oldImagePath);
+          } catch (unlinkError) {
+            console.warn('Warning: Could not delete old image file:', unlinkError);
+            // Continuar con la ejecución incluso si falla la eliminación
+          }
+        }
+        
+        // Procesar y guardar la nueva imagen
         updateData.imageUrl = await processImage(req.file);
       }
 
