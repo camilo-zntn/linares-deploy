@@ -343,7 +343,7 @@ export default function CommercePage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Descripción
+                  Descripcion
                 </label>
                 <textarea
                   value={formData.description}
@@ -356,7 +356,7 @@ export default function CommercePage() {
 
               <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Categoría
+                  Categoria
                 </label>
                 <select
                   value={formData.category}

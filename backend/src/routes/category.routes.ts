@@ -16,4 +16,7 @@ router.put('/:id', authMiddleware, isAdmin, categoryController.updateCategory);
 // Delete category
 router.delete('/:id', authMiddleware, isAdmin, categoryController.deleteCategory);
 
+// Add this new route
+router.get('/:id/commerces', authMiddleware, categoryController.getCommercesByCategory);
+
 export default router;

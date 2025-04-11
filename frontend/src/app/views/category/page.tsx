@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 interface Category {
   _id: string;
@@ -135,47 +136,66 @@ export default function CategoryPage() {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
         {categories.map((category) => (
-          <div 
+          <Link 
+            href={`/views/commerce/category/${category._id}`}
             key={category._id}
-            className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-shadow duration-300"
-            style={{ 
-              background: `linear-gradient(to right, ${category.color}15, white)`,
-              borderLeft: `4px solid ${category.color}`
-            }}
+            className="group relative"
           >
-            <div className="flex justify-between items-start">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-2">
-                  {category.icon && (
-                    <div 
-                      className="w-8 h-8 flex items-center justify-center"
-                      style={{ color: category.color }}
-                      dangerouslySetInnerHTML={{ __html: category.icon }}
-                    />
-                  )}
-                  <h3 className="text-xl font-semibold text-gray-800">{category.name}</h3>
-                </div>
-                <p className="text-gray-600 mt-2 line-clamp-2">{category.description}</p>
-              </div>
+            <div 
+              className="bg-white rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 flex flex-col items-center relative overflow-hidden cursor-pointer"
+              style={{ 
+                background: `linear-gradient(135deg, ${category.color}08, white 50%, ${category.color}08)`
+              }}
+            >
+              <div className="absolute top-0 left-0 w-full h-1" style={{ backgroundColor: category.color }} />
               
-              <div className="flex gap-2 ml-4">
+              <div className="absolute top-3 right-3 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity z-10">
                 <button
-                  onClick={() => handleEdit(category)}
-                  className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleEdit(category);
+                  }}
+                  className="p-1.5 bg-white/80 backdrop-blur-sm text-gray-600 hover:text-blue-600 rounded-lg transition-colors shadow-sm hover:shadow"
                 >
-                  <Pencil className="w-4 h-4" />
+                  <Pencil className="w-3.5 h-3.5" />
                 </button>
                 <button
-                  onClick={() => handleDelete(category._id)}
-                  className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleDelete(category._id);
+                  }}
+                  className="p-1.5 bg-white/80 backdrop-blur-sm text-gray-600 hover:text-red-600 rounded-lg transition-colors shadow-sm hover:shadow"
                 >
-                  <Trash2 className="w-4 h-4" />
+                  <Trash2 className="w-3.5 h-3.5" />
                 </button>
+              </div>
+
+              <div className="w-full p-6">
+                <div 
+                  className="w-16 h-16 mx-auto flex items-center justify-center mb-4 rounded-2xl"
+                  style={{ 
+                    backgroundColor: `${category.color}15`,
+                    color: category.color,
+                    boxShadow: `0 4px 6px -1px ${category.color}15`
+                  }}
+                  dangerouslySetInnerHTML={{ __html: category.icon }}
+                />
+                
+                <div className="text-center">
+                  <h3 className="text-base font-semibold text-gray-800 mb-1">{category.name}</h3>
+                </div>
+              </div>
+
+              <div 
+                className="w-full py-3 px-4 bg-gray-50 border-t text-xs text-center group-hover:bg-opacity-80 transition-colors"
+                style={{ color: category.color }}
+              >
+                Ver comercios
               </div>
             </div>
-          </div>
+          </Link>
         ))}
       </div>
 
@@ -209,6 +229,7 @@ export default function CategoryPage() {
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   className="w-full p-2 border rounded-md"
                   rows={3}
+                  required
                 />
               </div>
 
@@ -222,6 +243,7 @@ export default function CategoryPage() {
                   className="w-full p-2 border rounded-md font-mono text-sm"
                   placeholder="Paste SVG code here"
                   rows={3}
+                  required
                 />
               </div>
 

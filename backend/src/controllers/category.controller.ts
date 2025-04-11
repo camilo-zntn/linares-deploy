@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { CategoryModel } from '../models/category.model';
+import { CommerceModel } from '../models/commerce.model';
 
 export const categoryController = {
   // Get all categories
@@ -92,6 +93,37 @@ export const categoryController = {
       res.status(500).json({
         success: false,
         message: 'Error deleting category',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  },
+  // Add this to your existing categoryController object
+  getCommercesByCategory: async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const category = await CategoryModel.findById(id);
+      
+      if (!category) {
+        return res.status(404).json({
+          success: false,
+          message: 'Category not found'
+        });
+      }
+  
+      const commerces = await CommerceModel.find({ category: id })
+        .populate('category', 'name')
+        .sort({ createdAt: -1 });
+  
+      res.status(200).json({
+        success: true,
+        category,
+        commerces,
+        message: 'Category commerces retrieved successfully'
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Error retrieving category commerces',
         error: error instanceof Error ? error.message : 'Unknown error'
       });
     }

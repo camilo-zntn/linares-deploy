@@ -2,7 +2,6 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 export interface ICategory extends Document {
   name: string;
-  description: string;
   icon: string;
   color: string;
   createdAt: Date;
@@ -14,11 +13,6 @@ const CategorySchema = new Schema({
     type: String, 
     required: true,
     unique: true,
-    trim: true
-  },
-  description: { 
-    type: String, 
-    required: true,
     trim: true
   },
   icon: { 

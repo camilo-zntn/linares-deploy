@@ -50,7 +50,7 @@ const commerceSchema = new Schema<ICommerce>({
     required: [true, 'Image URL is required'],
     trim: true
   },
-  category: {
+    category: {
     type: Schema.Types.ObjectId,
     ref: 'Category',
     required: [true, 'Category is required']
