@@ -158,18 +158,34 @@ export const commerceController = {
   deleteCommerce: async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      const deletedCommerce = await CommerceModel.findByIdAndDelete(id);
-
-      if (!deletedCommerce) {
+      
+      // First find the commerce to get the image URL
+      const commerce = await CommerceModel.findById(id);
+  
+      if (!commerce) {
         return res.status(404).json({
           success: false,
           message: 'Commerce not found'
         });
       }
-
+  
+      // Delete the image file if it exists
+      if (commerce.imageUrl) {
+        const imagePath = path.join(__dirname, '../..', commerce.imageUrl);
+        try {
+          await fs.unlink(imagePath);
+        } catch (unlinkError) {
+          console.warn('Warning: Could not delete image file:', unlinkError);
+          // Continue with commerce deletion even if image deletion fails
+        }
+      }
+  
+      // Delete the commerce from database
+      await CommerceModel.findByIdAndDelete(id);
+  
       res.status(200).json({
         success: true,
-        message: 'Commerce deleted successfully'
+        message: 'Commerce and associated image deleted successfully'
       });
     } catch (error) {
       res.status(500).json({
