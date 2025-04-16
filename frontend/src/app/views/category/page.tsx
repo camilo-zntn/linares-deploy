@@ -139,7 +139,7 @@ export default function CategoryPage() {
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
         {categories.map((category) => (
           <Link 
-            href={`/views/commerce/category/${category._id}`}
+            href={`/views/category/${category._id}`} // Updated path
             key={category._id}
             className="group relative"
           >

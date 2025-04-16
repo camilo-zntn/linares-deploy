@@ -9,5 +9,7 @@ router.get('/', authMiddleware, commerceController.getCommerces);
 router.post('/', authMiddleware, isAdmin, upload.single('image'), commerceController.createCommerce);
 router.put('/:id', authMiddleware, isAdmin, upload.single('image'), commerceController.updateCommerce);
 router.delete('/:id', authMiddleware, isAdmin, commerceController.deleteCommerce);
+// Add this route
+router.get('/:id', authMiddleware, commerceController.getCommerceById);
 
 export default router;

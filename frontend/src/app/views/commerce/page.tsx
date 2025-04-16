@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import Link from 'next/link';
 
 interface DaySchedule {
   start: string;
@@ -202,7 +203,7 @@ export default function CommercePage() {
               description: '',
               imageUrl: '',
               imageFile: null,
-              category: '', 
+              category: '',
               schedule: {
                 monday: { start: '09:00', end: '18:00', isClosed: false },
                 tuesday: { start: '09:00', end: '18:00', isClosed: false },
@@ -221,100 +222,79 @@ export default function CommercePage() {
           Crear Comercio
         </button>
       </div>
-
+  
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
         {commerces.map((commerce) => (
           <div 
             key={commerce._id}
             className="bg-white rounded-xl shadow-lg overflow-hidden flex flex-col"
           >
-            <div className="relative h-48">
-              <img 
-                src={commerce.imageUrl.startsWith('http') 
-                  ? commerce.imageUrl 
-                  : `http://localhost:5000${commerce.imageUrl}`}
-                alt={commerce.name}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.onerror = null;
-                  target.src = '/images/default-store.jpg';
+            <Link 
+              href={`/views/commerce/${commerce._id}`}
+              className="flex-1 cursor-pointer hover:opacity-90"
+            >
+              <div className="relative h-48">
+                <img 
+                  src={commerce.imageUrl.startsWith('http') 
+                    ? commerce.imageUrl 
+                    : `http://localhost:5000${commerce.imageUrl}`}
+                  alt={commerce.name}
+                  className="w-full h-full object-cover"
+                />
+                <div className={`absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-medium ${
+                  isBusinessOpen(commerce.schedule) ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+                }`}>
+                  {isBusinessOpen(commerce.schedule) ? 'Abierto' : 'Cerrado'}
+                </div>
+              </div>
+              <div className="p-4">
+                <h3 className="text-lg font-semibold text-gray-800">{commerce.name}</h3>
+                <p className="text-sm text-gray-600 mt-2">{commerce.description}</p>
+              </div>
+            </Link>
+            <div className="flex justify-end gap-2 p-4 pt-0">
+              <button
+                onClick={() => {
+                  const parsedSchedule = typeof commerce.schedule === 'string' 
+                    ? JSON.parse(commerce.schedule) 
+                    : commerce.schedule;
+                  setFormData({
+                    name: commerce.name,
+                    description: commerce.description,
+                    imageUrl: commerce.imageUrl,
+                    imageFile: null,
+                    category: commerce.category._id,
+                    schedule: parsedSchedule
+                  });
+                  setEditingId(commerce._id);
+                  setIsModalOpen(true);
                 }}
-              />
-              <div className="absolute inset-0 bg-black/20" />
-              <div 
-                className={`absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-medium ${
-                  isBusinessOpen(commerce.schedule)
-                    ? 'bg-green-500/90 text-white'
-                    : 'bg-red-500/90 text-white'
-                }`}
+                className="p-1.5 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
               >
-                {isBusinessOpen(commerce.schedule) ? 'Abierto' : 'Cerrado'}
-              </div>
-            </div>
-            <div className="p-4 flex-1 flex flex-col justify-between">
-              <div>
-                <div className="flex justify-between items-center">
-                  <h3 className="text-lg font-semibold text-gray-800 mt-1">{commerce.name}</h3>
-                  {(() => {
-                    const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-                    const today = days[new Date().getDay()];
-                    const todaySchedule = commerce.schedule[today as keyof Schedule];
-                    return (
-                      <span className="text-sm text-gray-500">
-                        {todaySchedule.isClosed ? 'Cerrado hoy' : `${todaySchedule.start} - ${todaySchedule.end}`}
-                      </span>
-                    );
-                  })()}
-                </div>
-                <div className="flex justify-between items-start mt-2">
-                  <p className="text-sm text-gray-600 line-clamp-2 flex-1">{commerce.description}</p>
-                  <div className="flex gap-2 ml-4">
-                    <button
-                      onClick={() => {
-                        const parsedSchedule = typeof commerce.schedule === 'string' 
-                          ? JSON.parse(commerce.schedule) 
-                          : commerce.schedule;
-                        setFormData({
-                          name: commerce.name,
-                          description: commerce.description,
-                          imageUrl: commerce.imageUrl,
-                          imageFile: null,
-                          category: commerce.category._id,  // Add this
-                          schedule: parsedSchedule
-                        });
-                        setEditingId(commerce._id);
-                        setIsModalOpen(true);
-                      }}
-                      className="p-1.5 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={async () => {
-                        if (!confirm('¿Estás seguro de que quieres eliminar este comercio?')) return;
-                        try {
-                          const token = localStorage.getItem('token');
-                          const response = await fetch(`http://localhost:5000/api/commerces/${commerce._id}`, {
-                            method: 'DELETE',
-                            headers: {
-                              'Authorization': `Bearer ${token}`
-                            }
-                          });
-                          if (!response.ok) throw new Error('Error deleting commerce');
-                          toast.success('Comercio eliminado');
-                          fetchCommerces();
-                        } catch (error) {
-                          toast.error('Error al eliminar el comercio');
-                        }
-                      }}
-                      className="p-1.5 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
+                <Pencil className="w-4 h-4" />
+              </button>
+              <button
+                onClick={async () => {
+                  if (!confirm('¿Estás seguro de que quieres eliminar este comercio?')) return;
+                  try {
+                    const token = localStorage.getItem('token');
+                    const response = await fetch(`http://localhost:5000/api/commerces/${commerce._id}`, {
+                      method: 'DELETE',
+                      headers: {
+                        'Authorization': `Bearer ${token}`
+                      }
+                    });
+                    if (!response.ok) throw new Error('Error deleting commerce');
+                    toast.success('Comercio eliminado');
+                    fetchCommerces();
+                  } catch (error) {
+                    toast.error('Error al eliminar el comercio');
+                  }
+                }}
+                className="p-1.5 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
             </div>
           </div>
         ))}

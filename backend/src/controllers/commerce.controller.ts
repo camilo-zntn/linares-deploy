@@ -194,5 +194,33 @@ export const commerceController = {
         error: error instanceof Error ? error.message : 'Unknown error'
       });
     }
+  },
+
+  // Add this method to the controller
+  getCommerceById: async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const commerce = await CommerceModel.findById(id)
+        .populate('category', 'name');
+
+      if (!commerce) {
+        return res.status(404).json({
+          success: false,
+          message: 'Commerce not found'
+        });
+      }
+
+      res.status(200).json({
+        success: true,
+        commerce,
+        message: 'Commerce retrieved successfully'
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Error retrieving commerce',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
   }
 };
