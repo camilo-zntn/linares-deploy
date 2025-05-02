@@ -94,6 +94,13 @@ export default function Sidebar() {
           href: '/views/commerce',
           adminOnly: true,
           description: 'Crear nuevos estantes digitales'
+        },
+        {
+          title: 'Inicio',
+          icon: FolderPlus,
+          href: '/views/home',
+          adminOnly: true,
+          description: 'Seccion Principal'
         }
       ]
     },

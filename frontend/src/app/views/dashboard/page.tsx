@@ -107,6 +107,14 @@ export default function Dashboard() {
       adminOnly: true
     },
     {
+      title: 'Inicio',
+      description: 'Linares conectado',
+      icon: Layout,
+      color: 'from-emerald-600 to-emerald-400',
+      link: '/views/home',
+      adminOnly: true
+    },
+    {
       title: 'Cerrar Sesion',
       description: 'Salir del sistema',
       icon: LogOut,
