@@ -12,17 +12,17 @@ const createSecondAdmin = async () => {
     await mongoose.connect(process.env.MONGODB_URI!);
 
     // Verificar si existe el admin
-    const existingAdmin = await UserModel.findOne({ username: "tomi" });
+    const existingAdmin = await UserModel.findOne({ username: "ruly" });
     if (existingAdmin) {
       console.log('El usuario tomi ya existe');
       process.exit(0);
     }
 
     const adminData = {
-      username: "tomi",
-      email: "thms.ramos0328@gmail.com",
+      username: "ruly",
+      email: "monsalveraul45@gmail.com",
       password: await bcrypt.hash("123", 10),
-      name: "Thomas",
+      name: "Raul",
       role: "admin",
       status: "active", 
       isVerified: true
@@ -30,7 +30,7 @@ const createSecondAdmin = async () => {
 
     const admin = new UserModel(adminData);
     await admin.save();
-    console.log('Administrador tomi creado exitosamente');
+    console.log('Administrador ruly creado exitosamente');
 
     process.exit(0);
   } catch (error) {
