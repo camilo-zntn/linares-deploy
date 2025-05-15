@@ -4,8 +4,8 @@ import { authMiddleware, isAdmin } from '../middlewares/auth.middleware';
 
 const router = Router();
 
-// Get all categories
-router.get('/', authMiddleware, categoryController.getCategories);
+// Get all categories - Ahora público
+router.get('/', categoryController.getCategories);
 
 // Create new category
 router.post('/', authMiddleware, isAdmin, categoryController.createCategory);
@@ -16,7 +16,7 @@ router.put('/:id', authMiddleware, isAdmin, categoryController.updateCategory);
 // Delete category
 router.delete('/:id', authMiddleware, isAdmin, categoryController.deleteCategory);
 
-// Add this new route
-router.get('/:id/commerces', authMiddleware, categoryController.getCommercesByCategory);
+// Get commerces by category - También público
+router.get('/:id/commerces', categoryController.getCommercesByCategory);
 
 export default router;

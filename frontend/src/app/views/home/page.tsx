@@ -50,18 +50,13 @@ export default function HomePage() {
 
   const fetchCategories = async () => {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        router.push('/views/auth/login');
-        return;
-      }
-
       const response = await fetch('http://localhost:5000/api/categories', {
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
         }
       });
-
+  
       if (!response.ok) throw new Error('Error cargando categorías');
       const data = await response.json();
       setCategories(data.categories);

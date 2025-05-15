@@ -47,7 +47,8 @@ export default function Sidebar() {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     localStorage.removeItem('authToken');
-    router.push('/views/auth/login');
+    setUserData(null);
+    router.push('/views/home');
   };
 
   const isActive = (href: string) => pathname === href;
@@ -57,7 +58,8 @@ export default function Sidebar() {
       title: 'Panel Principal',
       icon: LayoutDashboard,
       href: '/views/dashboard',
-      description: 'Vista general del sistema'
+      description: 'Vista general del sistema',
+      adminOnly: true 
     },
     {
       section: 'Registros',
@@ -224,28 +226,53 @@ export default function Sidebar() {
 
         {/* Boton de logout mejorado */}
         <div className="p-4 border-t border-color mt-auto bg-gradient-to-t from-red-500/5 to-transparent">
-          <button
-            onClick={handleLogout}
-            className="group flex items-center gap-3 w-full px-4 py-3 text-red-600 
-              hover:bg-red-50 rounded-lg transition-all duration-300
-              hover:shadow-md hover:shadow-red-100/50
-              active:scale-95 relative overflow-hidden
-              before:absolute before:inset-0 before:bg-red-100/0
-              before:transition-all before:duration-300
-              hover:before:bg-red-100/50"
-          >
-            <LogOut className="w-5 h-5 transition-transform duration-300 
-              group-hover:rotate-12 group-hover:scale-110" />
-            <span className="font-medium relative z-10 transition-all duration-300 
-              group-hover:translate-x-1">
-              Cerrar Sesion
-            </span>
-            <span className="absolute right-4 transform translate-x-8 opacity-0 
-              transition-all duration-300 group-hover:translate-x-0 
-              group-hover:opacity-100 font-bold text-lg">
-              →
-            </span>
-          </button>
+          {userData ? (
+            <button
+              onClick={handleLogout}
+              className="group flex items-center gap-3 w-full px-4 py-3 text-red-600 
+                hover:bg-red-50 rounded-lg transition-all duration-300
+                hover:shadow-md hover:shadow-red-100/50
+                active:scale-95 relative overflow-hidden
+                before:absolute before:inset-0 before:bg-red-100/0
+                before:transition-all before:duration-300
+                hover:before:bg-red-100/50"
+            >
+              <LogOut className="w-5 h-5 transition-transform duration-300 
+                group-hover:rotate-12 group-hover:scale-110" />
+              <span className="font-medium relative z-10 transition-all duration-300 
+                group-hover:translate-x-1">
+                Cerrar Sesión
+              </span>
+              <span className="absolute right-4 transform translate-x-8 opacity-0 
+                transition-all duration-300 group-hover:translate-x-0 
+                group-hover:opacity-100 font-bold text-lg">
+                →
+              </span>
+            </button>
+          ) : (
+            <Link
+              href="/views/auth/login"
+              className="group flex items-center gap-3 w-full px-4 py-3 text-emerald-600 
+                hover:bg-emerald-50 rounded-lg transition-all duration-300
+                hover:shadow-md hover:shadow-emerald-100/50
+                active:scale-95 relative overflow-hidden
+                before:absolute before:inset-0 before:bg-emerald-100/0
+                before:transition-all before:duration-300
+                hover:before:bg-emerald-100/50"
+            >
+              <LogOut className="w-5 h-5 transition-transform duration-300 
+                group-hover:rotate-12 group-hover:scale-110" />
+              <span className="font-medium relative z-10 transition-all duration-300 
+                group-hover:translate-x-1">
+                Iniciar Sesión
+              </span>
+              <span className="absolute right-4 transform translate-x-8 opacity-0 
+                transition-all duration-300 group-hover:translate-x-0 
+                group-hover:opacity-100 font-bold text-lg">
+                →
+              </span>
+            </Link>
+          )}
         </div>
       </div>
     </aside>

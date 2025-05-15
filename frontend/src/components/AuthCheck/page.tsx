@@ -38,6 +38,12 @@ export default function AuthCheck({ children }: { children: React.ReactNode }) {
       }
       return;
     }
+
+    // Si intenta acceder al dashboard y no es admin
+    if (pathname === '/views/dashboard' && userData?.role?.toLowerCase() !== 'admin') {
+      router.replace('/views/home');
+      return;
+    }
     
     // Si no tiene token y no es una ruta pública
     if (!token && !publicRoutes.includes(pathname || '')) {
@@ -53,7 +59,23 @@ export default function AuthCheck({ children }: { children: React.ReactNode }) {
   const isDashboardPage = pathname === '/views/dashboard';
   const isOtherPage = !isAuthPage && !isDashboardPage && !isPublicPage;
 
-  if (isPublicPage || isAuthPage) {
+  if (isPublicPage) {
+    return (
+      <div className="flex min-h-screen bg-secondary">
+        <div className="hidden lg:block">
+          <Sidebar />
+        </div>
+        <div className="flex-1 lg:ml-64">
+          <Navbar />
+          <main className="p-6 pt-20 lg:pt-6">
+            {children}
+          </main>
+        </div>
+      </div>
+    );
+  }
+
+  if (isAuthPage) {
     return <>{children}</>;
   }
 
