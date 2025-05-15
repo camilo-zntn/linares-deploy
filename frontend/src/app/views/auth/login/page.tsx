@@ -107,8 +107,9 @@ export default function Login() {
 
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(userToStore));
-      
-      window.location.href = '/views/dashboard';
+    
+      // Por esto:
+      router.push('/views/dashboard');
       
     } catch (err) {
       console.error('Login error:', err);

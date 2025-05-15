@@ -99,7 +99,7 @@ export default function Sidebar() {
           title: 'Inicio',
           icon: FolderPlus,
           href: '/views/home',
-          adminOnly: true,
+          adminOnly: false,
           description: 'Seccion Principal'
         }
       ]

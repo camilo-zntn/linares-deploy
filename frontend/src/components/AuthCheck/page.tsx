@@ -13,13 +13,33 @@ export default function AuthCheck({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setMounted(true);
     const token = localStorage.getItem('token');
-    const publicRoutes = ['/views/auth/login', '/views/auth/register', '/views/auth/verifycode', '/views/auth/recovery'];
+    const user = localStorage.getItem('user');
+    const userData = user ? JSON.parse(user) : null;
+    const publicRoutes = [
+      '/views/auth/login', 
+      '/views/auth/register', 
+      '/views/auth/verifycode', 
+      '/views/auth/recovery',
+      '/views/home',
+      '/'
+    ];
     
-    if (token && pathname?.startsWith('/views/auth')) {
-      router.replace('/views/dashboard');
+    // Si es una ruta pública, permitir acceso sin restricciones
+    if (publicRoutes.includes(pathname || '')) {
       return;
     }
     
+    // Si tiene token y está intentando acceder a rutas de autenticación
+    if (token && pathname?.startsWith('/views/auth')) {
+      if (userData?.role?.toLowerCase() === 'admin') {
+        router.replace('/views/dashboard');
+      } else {
+        router.replace('/views/home');
+      }
+      return;
+    }
+    
+    // Si no tiene token y no es una ruta pública
     if (!token && !publicRoutes.includes(pathname || '')) {
       router.replace('/views/auth/login');
       return;
@@ -28,11 +48,12 @@ export default function AuthCheck({ children }: { children: React.ReactNode }) {
 
   if (!mounted) return null;
 
+  const isPublicPage = pathname === '/views/home' || pathname === '/';
   const isAuthPage = pathname?.startsWith('/views/auth');
   const isDashboardPage = pathname === '/views/dashboard';
-  const isOtherPage = !isAuthPage && !isDashboardPage;
+  const isOtherPage = !isAuthPage && !isDashboardPage && !isPublicPage;
 
-  if (isAuthPage) {
+  if (isPublicPage || isAuthPage) {
     return <>{children}</>;
   }
 

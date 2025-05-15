@@ -112,7 +112,7 @@ export default function Dashboard() {
       icon: Layout,
       color: 'from-emerald-600 to-emerald-400',
       link: '/views/home',
-      adminOnly: true
+      adminOnly: false
     },
     {
       title: 'Cerrar Sesion',
