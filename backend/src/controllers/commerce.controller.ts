@@ -76,7 +76,8 @@ export const commerceController = {
         ...req.body,
         schedule: JSON.parse(req.body.schedule),
         imageUrl,
-        category: req.body.category  // Add this line
+        category: req.body.category,
+        googleMapsIframe: req.body.googleMapsIframe // Agregar este campo
       };
 
       const newCommerce = new CommerceModel(commerceData);

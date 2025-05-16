@@ -26,6 +26,7 @@ interface ICommerce {
   schedule: Schedule;
   createdAt: Date;
   updatedAt: Date;
+  googleMapsIframe: string; // Campo para el iframe de Google Maps
 }
 
 const dayScheduleSchema = {
@@ -63,6 +64,11 @@ const commerceSchema = new Schema<ICommerce>({
     friday: dayScheduleSchema,
     saturday: { ...dayScheduleSchema, end: { type: String, default: '14:00' } },
     sunday: { ...dayScheduleSchema, isClosed: { type: Boolean, default: true } }
+  },
+  googleMapsIframe: {
+    type: String,
+    required: false, // No es obligatorio
+    trim: true
   }
 }, {
   timestamps: true

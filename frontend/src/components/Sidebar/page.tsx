@@ -4,13 +4,12 @@ import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { 
-  LayoutDashboard,
+  FolderHeart,
   Users, 
   Files, 
   FolderPlus,
-  FilePlus, 
-  Search,
-  FileBox,
+  MapPinned,
+  House,
   LogOut 
 } from 'lucide-react';
 
@@ -54,13 +53,13 @@ export default function Sidebar() {
   const isActive = (href: string) => pathname === href;
 
   const menuItems: (MenuItem | MenuSection)[] = [
-    {
-      title: 'Panel Principal',
-      icon: LayoutDashboard,
-      href: '/views/dashboard',
-      description: 'Vista general del sistema',
-      adminOnly: true 
-    },
+    // {
+    //   title: 'Panel Principal',
+    //   icon: LayoutDashboard,
+    //   href: '/views/dashboard',
+    //   description: 'Vista general del sistema',
+    //   adminOnly: true 
+    // },
     {
       section: 'Registros',
       items: [
@@ -74,7 +73,7 @@ export default function Sidebar() {
       ]
     },
     {
-      section: 'Administracion',
+      section: 'Panel de navegacion',
       items: [
         {
           title: 'Gestionar Usuarios',
@@ -99,8 +98,15 @@ export default function Sidebar() {
         },
         {
           title: 'Inicio',
-          icon: FolderPlus,
+          icon: House,
           href: '/views/home',
+          adminOnly: false,
+          description: 'Seccion Principal'
+        },
+        {
+          title: 'Favoritos',
+          icon: FolderHeart,
+          href: '',
           adminOnly: false,
           description: 'Seccion Principal'
         }
@@ -129,33 +135,18 @@ export default function Sidebar() {
           <div className="flex flex-col items-center justify-center">
             <div className="flex items-center justify-center mb-4 transform hover:scale-105 transition-transform duration-200">
               <div className="relative">
-                <FileBox className="w-12 h-12 text-emerald-500" />
+                <MapPinned className="w-12 h-12 text-emerald-500" />
               </div>
             </div>
             <h2 className="text-2xl font-bold text-primary mb-4 text-center bg-clip-text text-transparent bg-gradient-to-r from-emerald-600 to-emerald-400">
               Linares
             </h2>
-            <div className="flex items-center justify-center w-full">
-              <span className={`
-                text-sm px-4 py-2 rounded-full font-medium
-                shadow-md transition-all duration-200
-                flex items-center justify-center
-                backdrop-blur-sm
-                ${userData?.role?.toLowerCase() === 'admin' 
-                  ? 'bg-emerald-100/80 text-emerald-700 hover:bg-emerald-200/80 hover:shadow-emerald-200/50'
-                  : 'bg-blue-100/80 text-blue-700 hover:bg-blue-200/80 hover:shadow-blue-200/50'
-                }`}
-              >
-                <Users className="w-4 h-4 mr-2" />
-                {userData?.role?.toLowerCase() === 'admin' ? 'Administrador' : 'Funcionario'}
-              </span>
-            </div>
           </div>
         </div>
 
         {/* Navigation mejorado */}
         <nav className="flex-1 overflow-y-auto p-4 space-y-4">
-          <div className="space-y-8">
+          <div>
             {filteredMenuItems.map((section, idx) => (
               <div key={idx} className="space-y-2">
                 {'href' in section ? (
@@ -200,7 +191,13 @@ export default function Sidebar() {
                           hover:translate-x-1
                           ${isActive(item.href)
                             ? 'bg-emerald-500/10 text-emerald-600 shadow-sm'
-                            : 'hover:bg-emerald-500/5'}`}
+                            : 'hover:bg-emerald-500/5'}
+                          ${item.title === 'Favoritos' && !userData ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        onClick={(e) => {
+                          if (item.title === 'Favoritos' && !userData) {
+                            e.preventDefault();
+                          }
+                        }}
                       >
                         <item.icon className={`w-5 h-5 transition-all duration-300 
                           group-hover:rotate-6 group-hover:scale-110 ${
@@ -224,7 +221,13 @@ export default function Sidebar() {
           </div>
         </nav>
 
-        {/* Boton de logout mejorado */}
+        {/* Mensaje condicional de registro */}
+        {!userData && (
+          <div className="p-4 text-center mb-2 text-sm text-gray-600">
+            Regístrate e inicia sesión para obtener beneficios exclusivos
+          </div>
+        )}
+        {/* Botón de logout mejorado */}
         <div className="p-4 border-t border-color mt-auto bg-gradient-to-t from-red-500/5 to-transparent">
           {userData ? (
             <button

@@ -32,6 +32,7 @@ interface Commerce {
     name: string;
   };
   schedule: Schedule;
+  googleMapsIframe?: string; // Add this line
 }
 
 export default function CommercePage() {
@@ -45,7 +46,8 @@ export default function CommercePage() {
     description: '',
     imageUrl: '',
     imageFile: null as File | null,
-    category: '',  // Add this
+    category: '',
+    googleMapsIframe: '', // Agregar este campo
     schedule: {
       monday: { start: '09:00', end: '18:00', isClosed: false },
       tuesday: { start: '09:00', end: '18:00', isClosed: false },
@@ -148,6 +150,8 @@ export default function CommercePage() {
       formDataToSend.append('description', formData.description);
       formDataToSend.append('schedule', JSON.stringify(formData.schedule));
       formDataToSend.append('category', formData.category);  // Add this
+      formDataToSend.append('googleMapsIframe', formData.googleMapsIframe);
+
       if (formData.imageFile) {
         formDataToSend.append('image', formData.imageFile);
       }
@@ -173,7 +177,8 @@ export default function CommercePage() {
         description: '',
         imageUrl: '',
         imageFile: null,
-        category: '',  
+        category: '',
+        googleMapsIframe: '',
         schedule: {
           monday: { start: '09:00', end: '18:00', isClosed: false },
           tuesday: { start: '09:00', end: '18:00', isClosed: false },
@@ -204,6 +209,7 @@ export default function CommercePage() {
               imageUrl: '',
               imageFile: null,
               category: '',
+              googleMapsIframe: '',
               schedule: {
                 monday: { start: '09:00', end: '18:00', isClosed: false },
                 tuesday: { start: '09:00', end: '18:00', isClosed: false },
@@ -264,6 +270,7 @@ export default function CommercePage() {
                     imageUrl: commerce.imageUrl,
                     imageFile: null,
                     category: commerce.category._id,
+                    googleMapsIframe: commerce.googleMapsIframe || '',
                     schedule: parsedSchedule
                   });
                   setEditingId(commerce._id);
@@ -344,13 +351,26 @@ export default function CommercePage() {
                   className="w-full p-2 border rounded-md"
                   required
                 >
-                  <option value="">Seleccionar categoría</option>
+                  <option value="">Seleccionar categoria</option>
                   {categories.map((category) => (
                     <option key={category._id} value={category._id}>
                       {category.name}
                     </option>
                   ))}
                 </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Mapa de Google
+                </label>
+                <textarea
+                  value={formData.googleMapsIframe}
+                  onChange={(e) => setFormData({ ...formData, googleMapsIframe: e.target.value })}
+                  className="w-full p-2 border rounded-md"
+                  rows={3}
+                  placeholder="Pega aquí el código iframe del mapa de Google"
+                />
               </div>
 
               <div>
@@ -490,3 +510,4 @@ export default function CommercePage() {
     </div>
   );
 }
+

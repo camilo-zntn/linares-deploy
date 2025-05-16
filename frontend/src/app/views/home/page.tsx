@@ -39,6 +39,7 @@ interface Commerce {
     name: string;
   };
   schedule: Schedule;
+  googleMapsIframe?: string; 
 }
 
 export default function HomePage() {
@@ -239,24 +240,53 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="mt-12">
-              <h2 className="text-2xl font-semibold text-gray-800 mb-6">Horarios de atención</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 max-w-4xl">
-                {Object.entries(selectedCommerce.schedule).map(([day, schedule]) => (
-                  <div key={day} className="flex items-center justify-between py-3 border-b border-gray-100">
-                    <span className="text-lg font-medium text-gray-700">
-                      {day === 'monday' ? 'Lunes' :
-                       day === 'tuesday' ? 'Martes' :
-                       day === 'wednesday' ? 'Miércoles' :
-                       day === 'thursday' ? 'Jueves' :
-                       day === 'friday' ? 'Viernes' :
-                       day === 'saturday' ? 'Sábado' : 'Domingo'}
-                    </span>
-                    <span className={`text-lg ${schedule.isClosed ? 'text-red-500 font-medium' : 'text-gray-600'}`}>
-                      {schedule.isClosed ? 'Cerrado' : `${schedule.start} - ${schedule.end}`}
-                    </span>
-                  </div>
-                ))}
+            <div className="mt-12 grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Sección del Mapa */}
+              {selectedCommerce.googleMapsIframe && (
+                <div className="rounded-xl p-6">
+                  <h2 className="text-2xl font-semibold text-gray-800 mb-6 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    Ubicacion
+                  </h2>
+                  <div 
+                    className="w-full h-[400px] rounded-lg overflow-hidden shadow-inner"
+                    dangerouslySetInnerHTML={{ __html: selectedCommerce.googleMapsIframe }}
+                  />
+                </div>
+              )}
+
+              {/* Sección de Horarios */}
+              <div className="rounded-xl p-6">
+                <h2 className="text-2xl font-semibold text-gray-800 mb-6 flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Horarios de atencion
+                </h2>
+                <div className="space-y-4">
+                  {Object.entries(selectedCommerce.schedule).map(([day, schedule]) => (
+                    <div key={day} className="flex items-center justify-between py-3 px-4 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                      <span className="text-lg font-medium text-gray-700">
+                        {day === 'monday' ? 'Lunes' :
+                         day === 'tuesday' ? 'Martes' :
+                         day === 'wednesday' ? 'Miercoles' :
+                         day === 'thursday' ? 'Jueves' :
+                         day === 'friday' ? 'Viernes' :
+                         day === 'saturday' ? 'Sabado' : 'Domingo'}
+                      </span>
+                      <span className={`text-lg font-medium px-4 py-1 rounded-full ${
+                        schedule.isClosed 
+                          ? 'bg-red-100 text-red-600' 
+                          : 'bg-emerald-100 text-emerald-600'
+                      }`}>
+                        {schedule.isClosed ? 'Cerrado' : `${schedule.start} - ${schedule.end}`}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
