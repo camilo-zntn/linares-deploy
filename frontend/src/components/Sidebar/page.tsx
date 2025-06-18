@@ -53,27 +53,8 @@ export default function Sidebar() {
   const isActive = (href: string) => pathname === href;
 
   const menuItems: (MenuItem | MenuSection)[] = [
-    // {
-    //   title: 'Panel Principal',
-    //   icon: LayoutDashboard,
-    //   href: '/views/dashboard',
-    //   description: 'Vista general del sistema',
-    //   adminOnly: true 
-    // },
     {
-      section: 'Registros',
-      items: [
-        {
-          title: 'Registro de eventos',
-          icon: Users,
-          href: '/views/logs',
-          adminOnly: true,
-          description: 'Administrar usuarios del sistema'
-        },
-      ]
-    },
-    {
-      section: 'Panel de navegacion',
+      section: 'Panel Admin',
       items: [
         {
           title: 'Gestionar Usuarios',
@@ -95,24 +76,40 @@ export default function Sidebar() {
           href: '/views/commerce',
           adminOnly: true,
           description: 'Crear nuevos estantes digitales'
-        },
+        }
+      ]
+    },
+    {
+      section: 'Panel Comercio',
+      items: [
+        {
+          title: 'Mi Comercio',
+          icon: FolderPlus,
+          href: '/views/management',
+          adminOnly: false,
+          description: 'Gestionar mi comercio'
+        }
+      ]
+    },
+    {
+      section: 'Panel Usuario',
+      items: [
         {
           title: 'Inicio',
           icon: House,
           href: '/views/home',
           adminOnly: false,
-          description: 'Seccion Principal'
+          description: 'Sección Principal'
         },
         {
           title: 'Favoritos',
           icon: FolderHeart,
-          href: '',
+          href: '/views/favorites',
           adminOnly: false,
-          description: 'Seccion Principal'
+          description: 'Sección Principal'
         }
       ]
-    },
-
+    }
   ];
 
   const filteredMenuItems = menuItems.map(item => {

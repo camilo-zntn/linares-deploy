@@ -159,7 +159,7 @@ export default function Dashboard() {
             </h1>
             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3">
               <span className="inline-flex items-center px-2 py-1 bg-emerald-50/80 text-emerald-700 rounded-lg text-sm font-medium backdrop-blur-sm border border-emerald-100">
-                {userData?.role?.toLowerCase() === 'admin' ? 'Administrador' : 'Funcionario'}
+                {userData?.role?.toLowerCase() === 'admin' ? 'Administrador' : 'Usuario'}
               </span>
               {userData?.department && (
                 <span className="inline-flex items-center px-4 py-2 bg-gray-50/80 text-gray-600 rounded-lg text-sm font-medium backdrop-blur-sm border border-gray-100">

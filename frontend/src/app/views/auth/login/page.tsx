@@ -13,6 +13,7 @@ interface LoginResponse {
     name: string;
     email: string;
     role: string;
+    commerceId?: string;
   };
   message?: string;
   resetPasswordAvailable?: boolean;
@@ -103,12 +104,12 @@ export default function Login() {
         name: data.user.name,
         email: data.user.email,
         role: data.user.role,
+        commerceId: data.user.commerceId  
       };
 
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(userToStore));
     
-      // Por esto:
       router.push('/views/dashboard');
       
     } catch (err) {

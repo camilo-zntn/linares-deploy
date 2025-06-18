@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { CommerceModel } from '../models/commerce.model';
+import { UserModel } from '../models/user.model'; 
 import path from 'path';
 import sharp from 'sharp';
 import fs from 'fs/promises';
@@ -75,9 +76,10 @@ export const commerceController = {
       const commerceData = {
         ...req.body,
         schedule: JSON.parse(req.body.schedule),
+        contact: JSON.parse(req.body.contact), // Parsear la información de contacto
         imageUrl,
         category: req.body.category,
-        googleMapsIframe: req.body.googleMapsIframe // Agregar este campo
+        googleMapsIframe: req.body.googleMapsIframe 
       };
 
       const newCommerce = new CommerceModel(commerceData);
@@ -125,6 +127,10 @@ export const commerceController = {
 
       if (typeof updateData.schedule === 'string') {
         updateData.schedule = JSON.parse(updateData.schedule);
+      }
+
+      if (typeof updateData.contact === 'string') {
+        updateData.contact = JSON.parse(updateData.contact);
       }
 
       const updatedCommerce = await CommerceModel.findByIdAndUpdate(
@@ -221,6 +227,47 @@ export const commerceController = {
         success: false,
         message: 'Error retrieving commerce',
         error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  },
+
+  getMyCommerce: async (req: Request, res: Response) => {
+    try {
+      const userId = req.user?.userId;
+
+      // Buscar el usuario para obtener el commerceId asociado
+      const user = await UserModel.findById(userId);
+
+      if (!user || !user.commerceId) {
+        return res.status(404).json({
+          success: false,
+          message: 'No hay comercio asociado a este usuario'
+        });
+      }
+
+      // Buscar el comercio usando el commerceId del usuario
+      const commerce = await CommerceModel.findById(user.commerceId)
+        .populate('category', 'name');
+
+      if (!commerce) {
+        return res.status(404).json({
+          success: false,
+          message: 'Comercio no encontrado'
+        });
+      }
+
+      res.status(200).json({
+        success: true,
+        commerce,
+        message: 'Comercio recuperado exitosamente'
+      });
+
+    } catch (error) {
+      console.error('Error al obtener el comercio:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error al obtener información del comercio',
+        error: error instanceof Error ? error.message : 'Error desconocido'
       });
     }
   }

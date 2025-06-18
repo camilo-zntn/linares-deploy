@@ -74,6 +74,18 @@ export const isAdmin = (
   next();
 };
 
+export const isCommerce = (
+  req: AuthRequest, 
+  res: Response, 
+  next: NextFunction
+): void => {
+  if (req.user?.role !== 'commerce') {
+    res.status(403).json({ message: 'Acceso denegado: Se requiere rol de comercio' });
+    return;
+  }
+  next();
+};
+
 export const isVerified = (
   req: AuthRequest,
   res: Response,

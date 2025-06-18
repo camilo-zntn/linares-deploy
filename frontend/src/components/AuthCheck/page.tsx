@@ -33,6 +33,8 @@ export default function AuthCheck({ children }: { children: React.ReactNode }) {
     if (token && pathname?.startsWith('/views/auth')) {
       if (userData?.role?.toLowerCase() === 'admin') {
         router.replace('/views/dashboard');
+      } else if (userData?.role?.toLowerCase() === 'commerce') {
+        router.replace('/views/management');
       } else {
         router.replace('/views/home');
       }
@@ -41,6 +43,12 @@ export default function AuthCheck({ children }: { children: React.ReactNode }) {
 
     // Si intenta acceder al dashboard y no es admin
     if (pathname === '/views/dashboard' && userData?.role?.toLowerCase() !== 'admin') {
+      router.replace('/views/home');
+      return;
+    }
+
+    // Si intenta acceder a la gestión de comercio y no tiene rol de comercio o no tiene commerceId
+    if (pathname === '/views/management' && (userData?.role?.toLowerCase() !== 'commerce' || !userData?.commerceId)) {
       router.replace('/views/home');
       return;
     }

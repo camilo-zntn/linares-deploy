@@ -26,7 +26,17 @@ interface ICommerce {
   schedule: Schedule;
   createdAt: Date;
   updatedAt: Date;
-  googleMapsIframe: string; // Campo para el iframe de Google Maps
+  googleMapsIframe: string;
+  contact: {
+    email: string;
+    phone: string;
+    website: string;
+    socialMedia: {
+      facebook: string;
+      instagram: string;
+      whatsapp: string;
+    };
+  };
 }
 
 const dayScheduleSchema = {
@@ -69,6 +79,40 @@ const commerceSchema = new Schema<ICommerce>({
     type: String,
     required: false, // No es obligatorio
     trim: true
+  },
+  contact: {
+    email: {
+      type: String,
+      required: false,
+      trim: true
+    },
+    phone: {
+      type: String,
+      required: false,
+      trim: true
+    },
+    website: {
+      type: String,
+      required: false,
+      trim: true
+    },
+    socialMedia: {
+      facebook: {
+        type: String,
+        required: false,
+        trim: true
+      },
+      instagram: {
+        type: String,
+        required: false,
+        trim: true
+      },
+      whatsapp: {
+        type: String,
+        required: false,
+        trim: true
+      }
+    }
   }
 }, {
   timestamps: true

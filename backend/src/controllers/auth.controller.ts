@@ -71,7 +71,8 @@ export const login = async (req: Request, res: Response) => {
         id: user._id,
         email: user.email,
         name: user.name,
-        role: user.role
+        role: user.role,
+        commerceId: user.commerceId  
       }
     });
 
@@ -109,7 +110,7 @@ export const register = async (req: Request, res: Response) => {
       password: hashedPassword,
       name,
       username,
-      role: 'funcionario',
+      role: 'user',
       status: 'pending', 
       isVerified: false,
       verificationCode,
