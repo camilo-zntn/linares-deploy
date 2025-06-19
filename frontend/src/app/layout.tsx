@@ -12,21 +12,30 @@ const inter = Inter({ subsets: ['latin'] });
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isFading, setIsFading] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsFading(true);
       setTimeout(() => {
         setIsLoading(false);
-      }, 800); // Tiempo para el desvanecido
-    }, 1200); // Tiempo de mostrar el loader
+      }, 800);
+    }, 1200);
 
     return () => clearTimeout(timer);
   }, []);
 
+  if (!mounted) {
+    return null;
+  }
+
   return (
     <html lang="es" className={inter.className} suppressHydrationWarning>
-      <body>
+      <body suppressHydrationWarning>
         <AuthProvider>
           <AuthCheck>
             {isLoading && (
@@ -36,6 +45,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   opacity: isFading ? '0' : '1',
                   transition: 'all 0.8s ease-in-out'
                 }}
+                suppressHydrationWarning
               >
                 <img 
                   src="https://www.corporacionlinares.cl/ordenesIngreso/assets/images/logo.png"
@@ -72,6 +82,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 opacity: isLoading ? '0' : '1',
                 transition: 'opacity 0.8s ease-in-out'
               }}
+              suppressHydrationWarning
             >
               {children}
             </div>
