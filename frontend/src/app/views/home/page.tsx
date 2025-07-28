@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'react-hot-toast';
+import { Clock, Phone, Mail, Globe, Facebook, Instagram, MessageCircle, Heart, Loader2 } from 'lucide-react';
 
 interface DaySchedule {
   start: string;
@@ -39,7 +40,17 @@ interface Commerce {
     name: string;
   };
   schedule: Schedule;
-  googleMapsIframe?: string; 
+  googleMapsIframe?: string;
+  contact?: {
+    email?: string;
+    phone?: string;
+    website?: string;
+    socialMedia?: {
+      facebook?: string;
+      instagram?: string;
+      whatsapp?: string;
+    };
+  };
 }
 
 export default function HomePage() {
@@ -48,6 +59,10 @@ export default function HomePage() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [commerces, setCommerces] = useState<Commerce[]>([]);
   const [selectedCommerce, setSelectedCommerce] = useState<Commerce | null>(null);
+  const [isLoadingCommerce, setIsLoadingCommerce] = useState(false);
+  // Nuevos estados para favoritos
+  const [favoriteCommerces, setFavoriteCommerces] = useState<string[]>([]);
+  const [loadingFavorites, setLoadingFavorites] = useState<{ [key: string]: boolean }>({});
 
   const fetchCategories = async () => {
     try {
@@ -85,8 +100,88 @@ export default function HomePage() {
     }
   };
 
+  // Nuevas funciones para manejar favoritos
+  const fetchUserFavorites = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const response = await fetch('http://localhost:5000/api/users/favorites', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setFavoriteCommerces(data.favoriteCommerces.map((c: Commerce) => c._id));
+      }
+    } catch (error) {
+      console.error('Error fetching favorites:', error);
+    }
+  };
+
+  const toggleFavorite = async (commerceId: string, event: React.MouseEvent) => {
+    event.stopPropagation();
+    
+    const token = localStorage.getItem('token');
+    if (!token) {
+      toast.error('Debes iniciar sesión para guardar favoritos');
+      return;
+    }
+
+    setLoadingFavorites(prev => ({ ...prev, [commerceId]: true }));
+
+    try {
+      const isFavorite = favoriteCommerces.includes(commerceId);
+      
+      if (isFavorite) {
+        // Remover de favoritos
+        const response = await fetch(`http://localhost:5000/api/users/favorites/${commerceId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (response.ok) {
+          setFavoriteCommerces(prev => prev.filter(id => id !== commerceId));
+          toast.success('Removido de favoritos');
+        }
+      } else {
+        // Agregar a favoritos
+        const response = await fetch('http://localhost:5000/api/users/favorites', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ commerceId })
+        });
+
+        if (response.ok) {
+          setFavoriteCommerces(prev => [...prev, commerceId]);
+          toast.success('Agregado a favoritos');
+        }
+      }
+    } catch (error) {
+      toast.error('Error al actualizar favoritos');
+    } finally {
+      setLoadingFavorites(prev => ({ ...prev, [commerceId]: false }));
+    }
+  };
+
+  const handleCommerceSelection = (commerce: Commerce) => {
+    setIsLoadingCommerce(true);
+    setTimeout(() => {
+      setSelectedCommerce(commerce);
+      setIsLoadingCommerce(false);
+    }, 1000);
+  };
+
   useEffect(() => {
     fetchCategories();
+    fetchUserFavorites();
   }, []);
 
   const isBusinessOpen = (schedule: Schedule): boolean => {
@@ -171,26 +266,46 @@ export default function HomePage() {
             {commerces.map((commerce) => (
               <div 
                 key={commerce._id}
-                onClick={() => setSelectedCommerce(commerce)}
-                className="bg-white rounded-xl shadow-lg overflow-hidden flex flex-col cursor-pointer hover:shadow-xl transition-all duration-300"
+                className="bg-white rounded-xl shadow-lg overflow-hidden flex flex-col cursor-pointer hover:shadow-xl transition-all duration-300 relative group"
               >
-                <div className="relative h-48">
-                  <img 
-                    src={commerce.imageUrl.startsWith('http') 
-                      ? commerce.imageUrl 
-                      : `http://localhost:5000${commerce.imageUrl}`}
-                    alt={commerce.name}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className={`absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-medium ${
-                    isBusinessOpen(commerce.schedule) ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
-                  }`}>
-                    {isBusinessOpen(commerce.schedule) ? 'Abierto' : 'Cerrado'}
+                {/* Botón de favorito */}
+                <button
+                  onClick={(e) => toggleFavorite(commerce._id, e)}
+                  disabled={loadingFavorites[commerce._id]}
+                  className="absolute top-2 right-2 z-10 p-2 bg-white/90 rounded-full shadow-md hover:bg-white transition-all duration-200 group-hover:scale-110 disabled:opacity-50"
+                >
+                  {loadingFavorites[commerce._id] ? (
+                    <Loader2 className="h-5 w-5 text-gray-400 animate-spin" />
+                  ) : (
+                    <Heart 
+                      className={`h-5 w-5 transition-colors ${
+                        favoriteCommerces.includes(commerce._id) 
+                          ? 'text-red-500 fill-current' 
+                          : 'text-gray-400 hover:text-red-500'
+                      }`} 
+                    />
+                  )}
+                </button>
+
+                <div onClick={() => handleCommerceSelection(commerce)} className="flex-1">
+                  <div className="relative h-48">
+                    <img 
+                      src={commerce.imageUrl.startsWith('http') 
+                        ? commerce.imageUrl 
+                        : `http://localhost:5000${commerce.imageUrl}`}
+                      alt={commerce.name}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className={`absolute top-2 left-2 px-2 py-1 rounded-full text-xs font-medium ${
+                      isBusinessOpen(commerce.schedule) ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+                    }`}>
+                      {isBusinessOpen(commerce.schedule) ? 'Abierto' : 'Cerrado'}
+                    </div>
                   </div>
-                </div>
-                <div className="p-4">
-                  <h3 className="text-lg font-semibold text-gray-800">{commerce.name}</h3>
-                  <p className="text-sm text-gray-600 mt-2">{commerce.description}</p>
+                  <div className="p-4">
+                    <h3 className="text-lg font-semibold text-gray-800">{commerce.name}</h3>
+                    <p className="text-sm text-gray-600 mt-2">{commerce.description}</p>
+                  </div>
                 </div>
               </div>
             ))}
@@ -209,83 +324,151 @@ export default function HomePage() {
             </button>
           </div>
 
-          <div className="max-w-5xl mx-auto">
-            <div className="flex items-start gap-8 mb-12">
-              <div className="w-48 h-48 flex-shrink-0">
-                <img 
-                  src={selectedCommerce.imageUrl.startsWith('http') 
-                    ? selectedCommerce.imageUrl 
-                    : `http://localhost:5000${selectedCommerce.imageUrl}`}
-                  alt={selectedCommerce.name}
-                  className="w-full h-full object-cover rounded-lg shadow-md"
-                />
-              </div>
-              
-              <div className="flex-1 min-w-0">
-                <div>
-                  <h1 className="text-4xl font-bold text-gray-800 break-words">{selectedCommerce.name}</h1>
-                  <div className="mt-2">
-                    <span className={`text-sm font-medium px-3 py-1 rounded-full inline-block ${
-                      isBusinessOpen(selectedCommerce.schedule) 
-                        ? 'bg-green-50 text-green-600' 
-                        : 'bg-red-50 text-red-600'
-                    }`}>
+          <div className="container mx-auto px-4 py-8">
+            <div className="rounded-lg overflow-hidden">
+              <div className="grid lg:grid-cols-2 gap-8">
+                {/* Columna Izquierda - Imagen y Detalles Principales */}
+                <div className="p-6">
+                  <div className="relative aspect-video mb-6">
+                    <img 
+                      src={selectedCommerce.imageUrl.startsWith('http') 
+                        ? selectedCommerce.imageUrl 
+                        : `http://localhost:5000${selectedCommerce.imageUrl}`}
+                      alt={selectedCommerce.name}
+                      className="aspect-square object-cover rounded-xl"
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-between mb-4">
+                    <h1 className="text-3xl font-bold text-gray-800">{selectedCommerce.name}</h1>
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${isBusinessOpen(selectedCommerce.schedule) ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}`}>
                       {isBusinessOpen(selectedCommerce.schedule) ? 'Abierto' : 'Cerrado'}
                     </span>
                   </div>
-                </div>
-                <p className="mt-4 text-lg text-gray-600 leading-relaxed break-words">
-                  {selectedCommerce.description}
-                </p>
-              </div>
-            </div>
 
-            <div className="mt-12 grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Sección del Mapa */}
-              {selectedCommerce.googleMapsIframe && (
-                <div className="rounded-xl p-6">
-                  <h2 className="text-2xl font-semibold text-gray-800 mb-6 flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    Ubicacion
-                  </h2>
-                  <div 
-                    className="w-full h-[400px] rounded-lg overflow-hidden shadow-inner"
-                    dangerouslySetInnerHTML={{ __html: selectedCommerce.googleMapsIframe }}
-                  />
-                </div>
-              )}
+                  <p className="text-gray-600 mb-6">{selectedCommerce.description}</p>
 
-              {/* Sección de Horarios */}
-              <div className="rounded-xl p-6">
-                <h2 className="text-2xl font-semibold text-gray-800 mb-6 flex items-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  Horarios de atencion
-                </h2>
-                <div className="space-y-4">
-                  {Object.entries(selectedCommerce.schedule).map(([day, schedule]) => (
-                    <div key={day} className="flex items-center justify-between py-3 px-4 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
-                      <span className="text-lg font-medium text-gray-700">
-                        {day === 'monday' ? 'Lunes' :
-                         day === 'tuesday' ? 'Martes' :
-                         day === 'wednesday' ? 'Miercoles' :
-                         day === 'thursday' ? 'Jueves' :
-                         day === 'friday' ? 'Viernes' :
-                         day === 'saturday' ? 'Sabado' : 'Domingo'}
-                      </span>
-                      <span className={`text-lg font-medium px-4 py-1 rounded-full ${
-                        schedule.isClosed 
-                          ? 'bg-red-100 text-red-600' 
-                          : 'bg-emerald-100 text-emerald-600'
-                      }`}>
-                        {schedule.isClosed ? 'Cerrado' : `${schedule.start} - ${schedule.end}`}
-                      </span>
+                  {/* Horario */}
+                  <div className="rounded-lg p-4 mb-6">
+                    <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                      <Clock className="h-5 w-5 text-emerald-500" />
+                      Horario
+                    </h2>
+                    <div className="space-y-2">
+                      {Object.entries(selectedCommerce.schedule).map(([day, schedule]) => (
+                        <div key={day} className="flex justify-between items-center py-2 px-3 bg-white rounded">
+                          <span className="capitalize text-gray-700">
+                            {day === 'monday' ? 'Lunes' :
+                             day === 'tuesday' ? 'Martes' :
+                             day === 'wednesday' ? 'Miércoles' :
+                             day === 'thursday' ? 'Jueves' :
+                             day === 'friday' ? 'Viernes' :
+                             day === 'saturday' ? 'Sábado' : 'Domingo'}
+                          </span>
+                          <span className={schedule.isClosed ? 'text-red-500' : 'text-emerald-600'}>
+                            {schedule.isClosed ? 'Cerrado' : `${schedule.start} - ${schedule.end}`}
+                          </span>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  </div>
+                </div>
+
+                {/* Columna Derecha - Contacto y Redes Sociales */}
+                <div className="p-6">
+                  {/* Información de contacto */}
+                  {(selectedCommerce.contact?.email || selectedCommerce.contact?.phone || selectedCommerce.contact?.website) && (
+                    <div className="mb-8">
+                      <h2 className="text-xl font-semibold text-gray-800 mb-4">Información de contacto</h2>
+                      <div className="space-y-3">
+                        {selectedCommerce.contact?.phone && (
+                          <a href={`tel:${selectedCommerce.contact.phone}`} 
+                             className="flex items-center gap-3 p-3 bg-white rounded-lg hover:bg-emerald-50 transition-colors">
+                            <Phone className="h-5 w-5 text-emerald-500" />
+                            <span className="text-gray-700">{selectedCommerce.contact.phone}</span>
+                          </a>
+                        )}
+                        {selectedCommerce.contact?.email && (
+                          <a href={`mailto:${selectedCommerce.contact.email}`} 
+                             className="flex items-center gap-3 p-3 bg-white rounded-lg hover:bg-emerald-50 transition-colors">
+                            <Mail className="h-5 w-5 text-emerald-500" />
+                            <span className="text-gray-700">{selectedCommerce.contact.email}</span>
+                          </a>
+                        )}
+                        {selectedCommerce.contact?.website && (
+                          <a href={selectedCommerce.contact.website} 
+                             target="_blank" 
+                             rel="noopener noreferrer"
+                             className="flex items-center gap-3 p-3 bg-white rounded-lg hover:bg-emerald-50 transition-colors">
+                            <Globe className="h-5 w-5 text-emerald-500" />
+                            <span className="text-gray-700">Sitio web</span>
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Redes Sociales */}
+                  {(selectedCommerce.contact?.socialMedia?.facebook || 
+                    selectedCommerce.contact?.socialMedia?.instagram || 
+                    selectedCommerce.contact?.socialMedia?.whatsapp) && (
+                    <div className="mb-8">
+                      <h2 className="text-xl font-semibold text-gray-800 mb-4">Redes Sociales</h2>
+                      <div className="flex gap-4">
+                        {selectedCommerce.contact.socialMedia.facebook && (
+                          <a href={selectedCommerce.contact.socialMedia.facebook}
+                             target="_blank"
+                             rel="noopener noreferrer"
+                             className="p-3 bg-white rounded-lg hover:bg-blue-50 transition-colors"
+                             title="Facebook">
+                            <Facebook className="h-6 w-6 text-blue-600" />
+                          </a>
+                        )}
+                        {selectedCommerce.contact.socialMedia.instagram && (
+                          <a href={selectedCommerce.contact.socialMedia.instagram}
+                             target="_blank"
+                             rel="noopener noreferrer"
+                             className="p-3 bg-white rounded-lg hover:bg-pink-50 transition-colors"
+                             title="Instagram">
+                            <Instagram className="h-6 w-6 text-pink-600" />
+                          </a>
+                        )}
+                        {selectedCommerce.contact.socialMedia.whatsapp && (
+                          <a href={`https://wa.me/${selectedCommerce.contact.socialMedia.whatsapp}`}
+                             target="_blank"
+                             rel="noopener noreferrer"
+                             className="p-3 bg-white rounded-lg hover:bg-green-50 transition-colors"
+                             title="WhatsApp">
+                            <MessageCircle className="h-6 w-6 text-green-600" />
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Sección del Mapa */}
+                  <div className="rounded-xl p-6">
+                    <h2 className="text-2xl font-semibold text-gray-800 mb-6 flex items-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      Ubicación
+                    </h2>
+                    {selectedCommerce.googleMapsIframe ? (
+                      <div 
+                        className="w-full h-[400px] rounded-lg overflow-hidden shadow-inner"
+                        dangerouslySetInnerHTML={{ __html: selectedCommerce.googleMapsIframe }}
+                      />
+                    ) : (
+                      <div className="flex flex-col items-center justify-center h-[400px] bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-gray-400 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M12 12h.01M12 14h.01M12 16h.01M12 18h.01M12 20h.01M12 22h.01" />
+                        </svg>
+                        <p className="text-gray-600 text-center">No hay mapa disponible para este comercio</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

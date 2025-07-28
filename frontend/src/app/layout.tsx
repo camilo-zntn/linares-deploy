@@ -24,7 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       setTimeout(() => {
         setIsLoading(false);
       }, 800);
-    }, 1200);
+    }, 800);
 
     return () => clearTimeout(timer);
   }, []);

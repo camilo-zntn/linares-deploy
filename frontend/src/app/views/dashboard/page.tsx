@@ -6,23 +6,15 @@ import {
   Users,         // Gestionar usuarios 
   FolderTree,    // Gestionar categorias
   Layout,        // Crear estante
-  FilePlus,      // Crear documentos
-  Search,        // Buscar documentos
   LogOut         // Cerrar sesion
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-
-interface Department {
-  _id: string;
-  name: string;
-}
 
 interface UserData {
   _id: string;
   name: string;
   email: string;
   role: string;
-  department: Department | string;
 }
 
 interface DashboardCard {
@@ -83,6 +75,14 @@ export default function Dashboard() {
       adminOnly: true
     },
     {
+      title: 'Solicitudes',
+      description: 'Solicitudes de soporte',
+      icon: ClipboardList,
+      color: 'from-blue-600 to-blue-400',
+      link: '/views/requests',
+      adminOnly: true
+    },
+    {
       title: 'Gestionar Usuarios',
       description: 'Gestiona usuarios del sistema',
       icon: Users,
@@ -112,6 +112,14 @@ export default function Dashboard() {
       icon: Layout,
       color: 'from-emerald-600 to-emerald-400',
       link: '/views/home',
+      adminOnly: false
+    },
+    {
+      title: 'Favoritos',
+      description: 'Comercios favoritos',
+      icon: Layout,
+      color: 'from-emerald-600 to-emerald-400',
+      link: '/views/saved',
       adminOnly: false
     },
     {
@@ -161,11 +169,6 @@ export default function Dashboard() {
               <span className="inline-flex items-center px-2 py-1 bg-emerald-50/80 text-emerald-700 rounded-lg text-sm font-medium backdrop-blur-sm border border-emerald-100">
                 {userData?.role?.toLowerCase() === 'admin' ? 'Administrador' : 'Usuario'}
               </span>
-              {userData?.department && (
-                <span className="inline-flex items-center px-4 py-2 bg-gray-50/80 text-gray-600 rounded-lg text-sm font-medium backdrop-blur-sm border border-gray-100">
-                  {typeof userData.department === 'string' ? userData.department : userData.department.name}
-                </span>
-              )}
             </div>
           </div>
         </div>

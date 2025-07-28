@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Pencil } from 'lucide-react';
+import { Pencil, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface User {
@@ -27,9 +27,11 @@ const UsersPage = () => {
   const [loading, setLoading] = useState(true);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
   const [commerces, setCommerces] = useState<Commerce[]>([]);
   
-  // Nuevos estados para filtros
+  // Estados para filtros
   const [searchName, setSearchName] = useState('');
   const [searchEmail, setSearchEmail] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
@@ -40,51 +42,6 @@ const UsersPage = () => {
     fetchUsers();
     fetchCommerces();
   }, []);
-
-  const fetchCommerces = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/commerces', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      if (!response.ok) throw new Error('Error al cargar comercios');
-      const data = await response.json();
-      setCommerces(data.commerces);
-    } catch (error) {
-      toast.error('Error al cargar comercios');
-    }
-  };
-
-  const updateUserCommerce = async (userId: string, commerceId: string) => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/users/${userId}/commerce`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ commerceId })
-      });
-
-      if (response.status === 404) {
-        throw new Error('Usuario o comercio no encontrado');
-      }
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Error al asignar comercio');
-      }
-
-      await fetchUsers();
-      toast.success('Comercio asignado correctamente');
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Error al asignar comercio');
-      console.error('Error asignando comercio:', error);
-    }
-  };
 
   const fetchUsers = async () => {
     try {
@@ -113,18 +70,36 @@ const UsersPage = () => {
     }
   };
 
-  const updateUserRole = async (userId: string, newRole: string) => {
+  const fetchCommerces = async () => {
     try {
-      // Actualización optimista inicial
-      const updatedUsers = users.map(user =>
-        user._id === userId ? {
-          ...user,
-          role: newRole as User['role'], // Aseguramos que el tipo sea correcto
-          commerceId: newRole !== 'commerce' ? undefined : user.commerceId
-        } : user
-      );
-      setUsers(updatedUsers);
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/commerces', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (!response.ok) throw new Error('Error al cargar comercios');
+      const data = await response.json();
+      setCommerces(data.commerces);
+    } catch (error) {
+      toast.error('Error al cargar comercios');
+    }
+  };
 
+  const updateUserRole = async (userId: string, newRole: string) => {
+    // Guardar estado anterior para posible reversión
+    const previousUsers = [...users];
+    
+    // Actualización optimista
+    setUsers(prevUsers => 
+      prevUsers.map(user => 
+        user._id === userId 
+          ? { ...user, role: newRole as 'admin' | 'commerce' | 'user', commerceId: newRole !== 'commerce' ? undefined : user.commerceId }
+          : user
+      )
+    );
+
+    try {
       const token = localStorage.getItem('token');
       const response = await fetch(`http://localhost:5000/api/users/${userId}/role`, {
         method: 'PUT',
@@ -136,34 +111,69 @@ const UsersPage = () => {
       });
 
       if (!response.ok) {
-        setUsers(users); // Revertir cambios si hay error
         const errorData = await response.json();
         throw new Error(errorData.message || 'Error al actualizar rol');
       }
 
-      // Si el nuevo rol no es 'commerce', limpiamos el comercio asignado en el backend
-      if (newRole !== 'commerce') {
-        const updatedUsersWithoutCommerce = updatedUsers.map(user =>
-          user._id === userId ? { ...user, commerceId: undefined } : user
-        );
-        setUsers(updatedUsersWithoutCommerce);
-        await updateUserCommerce(userId, '');
-      }
-
       toast.success('Rol actualizado correctamente');
     } catch (error) {
+      // Revertir cambios en caso de error
+      setUsers(previousUsers);
       toast.error(error instanceof Error ? error.message : 'Error al actualizar rol');
     }
   };
 
-  const updateUserStatus = async (userId: string, newStatus: string) => {
-    try {
-      // Actualización optimista
-      const updatedUsers = users.map(user =>
-        user._id === userId ? { ...user, status: newStatus as User['status'] } : user
-      );
-      setUsers(updatedUsers);
+  const updateUserCommerce = async (userId: string, commerceId: string) => {
+    // Guardar estado anterior para posible reversión
+    const previousUsers = [...users];
+    
+    // Actualización optimista
+    setUsers(prevUsers => 
+      prevUsers.map(user => 
+        user._id === userId 
+          ? { ...user, commerceId: commerceId || undefined }
+          : user
+      )
+    );
 
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:5000/api/users/${userId}/commerce`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ commerceId })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al asignar comercio');
+      }
+
+      toast.success(commerceId ? 'Comercio asignado correctamente' : 'Comercio removido correctamente');
+    } catch (error) {
+      // Revertir cambios en caso de error
+      setUsers(previousUsers);
+      toast.error(error instanceof Error ? error.message : 'Error al asignar comercio');
+    }
+  };
+
+  const updateUserStatus = async (userId: string, newStatus: string) => {
+    // Guardar estado anterior para posible reversión
+    const previousUsers = [...users];
+    
+    // Actualización optimista
+    setUsers(prevUsers => 
+      prevUsers.map(user => 
+        user._id === userId 
+          ? { ...user, status: newStatus as 'pending' | 'active' | 'deleted' }
+          : user
+      )
+    );
+
+    try {
       const token = localStorage.getItem('token');
       const response = await fetch(`http://localhost:5000/api/users/${userId}/status`, {
         method: 'PUT',
@@ -175,24 +185,31 @@ const UsersPage = () => {
       });
 
       if (!response.ok) {
-        setUsers(users); // Revertir cambios si hay error
         throw new Error('Error al actualizar estado');
       }
 
       toast.success('Estado actualizado correctamente');
     } catch (error) {
+      // Revertir cambios en caso de error
+      setUsers(previousUsers);
       toast.error('Error al actualizar estado');
     }
   };
 
   const updateUserInfo = async (userId: string, name: string, email: string) => {
-    try {
-      // Actualización optimista
-      const updatedUsers = users.map(user =>
-        user._id === userId ? { ...user, name, email } : user
-      );
-      setUsers(updatedUsers);
+    // Guardar estado anterior para posible reversión
+    const previousUsers = [...users];
+    
+    // Actualización optimista
+    setUsers(prevUsers => 
+      prevUsers.map(user => 
+        user._id === userId 
+          ? { ...user, name, email }
+          : user
+      )
+    );
 
+    try {
       const token = localStorage.getItem('token');
       const response = await fetch(`http://localhost:5000/api/users/${userId}`, {
         method: 'PUT',
@@ -204,15 +221,45 @@ const UsersPage = () => {
       });
 
       if (!response.ok) {
-        // Revertir cambios si hay error
-        setUsers(users);
         throw new Error('Error al actualizar usuario');
       }
 
       setShowEditModal(false);
       toast.success('Usuario actualizado correctamente');
     } catch (error) {
+      // Revertir cambios en caso de error
+      setUsers(previousUsers);
       toast.error('Error al actualizar usuario');
+    }
+  };
+
+  const deleteUser = async (userId: string) => {
+    // Guardar estado anterior para posible reversión
+    const previousUsers = [...users];
+    
+    // Actualización optimista
+    setUsers(prevUsers => prevUsers.filter(user => user._id !== userId));
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:5000/api/users/${userId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al eliminar usuario');
+      }
+
+      setShowDeleteModal(false);
+      setUserToDelete(null);
+      toast.success('Usuario eliminado correctamente');
+    } catch (error) {
+      // Revertir cambios en caso de error
+      setUsers(previousUsers);
+      toast.error('Error al eliminar usuario');
     }
   };
 
@@ -339,7 +386,7 @@ const UsersPage = () => {
           </div>
         </div>
       </div>
-
+      
       <div className="bg-white rounded-lg shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -405,6 +452,7 @@ const UsersPage = () => {
                           <button
                             onClick={() => updateUserCommerce(user._id, '')}
                             className="text-red-500 hover:text-red-700 transition-colors"
+                            title="Quitar comercio"
                           >
                             <svg 
                               xmlns="http://www.w3.org/2000/svg" 
@@ -443,15 +491,28 @@ const UsersPage = () => {
                     </select>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <button
-                      onClick={() => {
-                        setEditingUser(user);
-                        setShowEditModal(true);
-                      }}
-                      className="text-emerald-600 hover:text-emerald-900"
-                    >
-                      <Pencil className="h-5 w-5" />
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => {
+                          setEditingUser(user);
+                          setShowEditModal(true);
+                        }}
+                        className="text-emerald-600 hover:text-emerald-900 transition-colors"
+                        title="Editar usuario"
+                      >
+                        <Pencil className="h-5 w-5" />
+                      </button>
+                      <button
+                        onClick={() => {
+                          setUserToDelete(user);
+                          setShowDeleteModal(true);
+                        }}
+                        className="text-red-600 hover:text-red-900 transition-colors"
+                        title="Eliminar usuario"
+                      >
+                        <Trash2 className="h-5 w-5" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -462,7 +523,7 @@ const UsersPage = () => {
 
       {/* Modal de edición */}
       {showEditModal && editingUser && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
             <h3 className="text-lg font-medium mb-4">Editar Usuario</h3>
             <form onSubmit={(e) => {
@@ -482,6 +543,7 @@ const UsersPage = () => {
                     name="name"
                     defaultValue={editingUser.name}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
+                    required
                   />
                 </div>
                 <div>
@@ -491,6 +553,7 @@ const UsersPage = () => {
                     name="email"
                     defaultValue={editingUser.email}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
+                    required
                   />
                 </div>
               </div>
@@ -498,7 +561,7 @@ const UsersPage = () => {
                 <button
                   type="button"
                   onClick={() => setShowEditModal(false)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
+                  className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 rounded-md border"
                 >
                   Cancelar
                 </button>
@@ -510,6 +573,36 @@ const UsersPage = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de confirmación de eliminación */}
+      {showDeleteModal && userToDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-medium mb-4 text-red-600">Confirmar Eliminación</h3>
+            <p className="text-gray-600 mb-6">
+              ¿Estás seguro de que deseas eliminar al usuario <strong>{userToDelete.name}</strong>? 
+              Esta acción no se puede deshacer.
+            </p>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setUserToDelete(null);
+                }}
+                className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 rounded-md border"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => deleteUser(userToDelete._id)}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 rounded-md"
+              >
+                Eliminar
+              </button>
+            </div>
           </div>
         </div>
       )}

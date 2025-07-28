@@ -10,7 +10,8 @@ import {
   FolderPlus,
   MapPinned,
   House,
-  LogOut 
+  LogOut,
+  MessageCircleQuestion 
 } from 'lucide-react';
 
 interface UserData {
@@ -22,6 +23,7 @@ interface MenuItem {
   icon: any;
   href: string;
   adminOnly?: boolean;
+  commerceOnly?: boolean;
   description?: string;
 }
 
@@ -47,12 +49,35 @@ export default function Sidebar() {
     localStorage.removeItem('user');
     localStorage.removeItem('authToken');
     setUserData(null);
-    router.push('/views/home');
+    
+    // Forzar recarga completa de la página (equivalente a F5)
+    window.location.href = '/views/home';
+    // O alternativamente, si quieres recargar la página actual:
+    // window.location.reload();
   };
 
   const isActive = (href: string) => pathname === href;
 
   const menuItems: (MenuItem | MenuSection)[] = [
+    {
+      section: 'Panel Soporte',
+      items: [
+        {
+          title: 'Registro de eventos',
+          icon: Users,
+          href: '/views/logs',
+          adminOnly: true,
+          description: 'Administrar usuarios del sistema'
+        },
+        {
+          title: 'Solicitudes',
+          icon: Files,
+          href: '/views/requests',
+          adminOnly: true,
+          description: 'Gestionar categorias de documentos'
+        },
+      ]
+    },
     {
       section: 'Panel Admin',
       items: [
@@ -86,7 +111,7 @@ export default function Sidebar() {
           title: 'Mi Comercio',
           icon: FolderPlus,
           href: '/views/management',
-          adminOnly: false,
+          commerceOnly: true,
           description: 'Gestionar mi comercio'
         }
       ]
@@ -98,16 +123,25 @@ export default function Sidebar() {
           title: 'Inicio',
           icon: House,
           href: '/views/home',
-          adminOnly: false,
           description: 'Sección Principal'
         },
         {
           title: 'Favoritos',
           icon: FolderHeart,
-          href: '/views/favorites',
-          adminOnly: false,
-          description: 'Sección Principal'
+          href: '/views/saved', // Corregir la ruta
+          description: 'Comercios Guardados'
         }
+      ]
+    },
+    {
+      section: 'Soporte Usuario',
+      items: [
+        {
+          title: 'Ayuda',
+          icon: MessageCircleQuestion, // Cambiar House por MessageCircleQuestion
+          href: '/views/help',
+          description: 'Sección Principal'
+        },
       ]
     }
   ];
@@ -116,9 +150,17 @@ export default function Sidebar() {
     if ('items' in item) {
       return {
         ...item,
-        items: item.items.filter(subItem => 
-          !subItem.adminOnly || userData?.role?.toLowerCase() === 'admin'
-        )
+        items: item.items.filter(subItem => {
+          // Filtrar elementos solo para admin
+          if (subItem.adminOnly && userData?.role?.toLowerCase() !== 'admin') {
+            return false;
+          }
+          // Filtrar elementos solo para commerce
+          if (subItem.commerceOnly && userData?.role?.toLowerCase() !== 'commerce') {
+            return false;
+          }
+          return true;
+        })
       };
     }
     return item;
@@ -224,6 +266,7 @@ export default function Sidebar() {
             Regístrate e inicia sesión para obtener beneficios exclusivos
           </div>
         )}
+        
         {/* Botón de logout mejorado */}
         <div className="p-4 border-t border-color mt-auto bg-gradient-to-t from-red-500/5 to-transparent">
           {userData ? (
@@ -231,7 +274,7 @@ export default function Sidebar() {
               onClick={handleLogout}
               className="group flex items-center gap-3 w-full px-4 py-3 text-red-600 
                 hover:bg-red-50 rounded-lg transition-all duration-300
-                hover:shadow-md hover:shadow-red-100/50
+                hover:shadow-md hover-red-100/50
                 active:scale-95 relative overflow-hidden
                 before:absolute before:inset-0 before:bg-red-100/0
                 before:transition-all before:duration-300

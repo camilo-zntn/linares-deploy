@@ -110,7 +110,8 @@ export default function Login() {
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(userToStore));
     
-      router.push('/views/dashboard');
+      // Cambiar router.push por window.location.href para forzar recarga
+      window.location.href = '/views/dashboard';
       
     } catch (err) {
       console.error('Login error:', err);

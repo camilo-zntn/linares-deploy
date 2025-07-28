@@ -13,7 +13,8 @@ export interface IUser extends Document {
   isVerified: boolean;
   resetPasswordToken?: string;
   resetPasswordExpires?: Date;
-  commerceId?: string; // Nuevo campo
+  commerceId?: string;
+  favoriteCommerces: string[]; // Nuevo campo para favoritos
 }
 
 const userSchema = new Schema({
@@ -32,7 +33,9 @@ const userSchema = new Schema({
   resetPasswordToken: { type: String, default: null },
   resetPasswordExpires: { type: Date, default: null },
   // Referencia al comercio
-  commerceId: { type: Schema.Types.ObjectId, ref: 'Commerce', default: null }
+  commerceId: { type: Schema.Types.ObjectId, ref: 'Commerce', default: null },
+  // Nuevo campo para favoritos
+  favoriteCommerces: [{ type: Schema.Types.ObjectId, ref: 'Commerce', default: [] }]
 });
 
 export const UserModel = model<IUser>('User', userSchema);

@@ -21,6 +21,7 @@ export default function AuthCheck({ children }: { children: React.ReactNode }) {
       '/views/auth/verifycode', 
       '/views/auth/recovery',
       '/views/home',
+      '/views/help',  // Agregar esta línea
       '/'
     ];
     

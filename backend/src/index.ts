@@ -19,6 +19,7 @@ import userRoutes from './routes/user.routes';
 import logRoutes from './routes/log.routes';
 import categoryRoutes from './routes/category.routes';
 import commerceRoutes from './routes/commerce.routes';
+import requestRoutes from './routes/request.routes';
 
 // Inicializacion de Express
 const app = express();
@@ -44,14 +45,15 @@ app.use('/api/users', userRoutes);
 app.use('/api/logs', logRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/commerces', commerceRoutes); 
+app.use('/api/requests', requestRoutes);
 
 // Banner de inicio
 console.log(chalk.cyan.bold(`
-  ╔═══════════════════════════════════════════════╗
-  ║                                               ║
-  ║     Sistema de Digitalizacion de Archivos     ║
-  ║                                               ║ 
-  ╚═══════════════════════════════════════════════╝
+  ╔════════════════════════════╗
+  ║                            ║
+  ║     Sistema de Linares     ║
+  ║                            ║ 
+  ╚════════════════════════════╝
   `));
 
 // Ruta base

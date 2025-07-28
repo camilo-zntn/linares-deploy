@@ -48,6 +48,8 @@ interface Commerce {
 export default function CommercePage() {
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [commerceToDelete, setCommerceToDelete] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [commerces, setCommerces] = useState<Commerce[]>([]);
   const [categories, setCategories] = useState<{ _id: string; name: string; }[]>([]);
@@ -151,7 +153,7 @@ export default function CommercePage() {
 
   useEffect(() => {
     fetchCommerces();
-    fetchCategories(); // Add this line
+    fetchCategories();
     const interval = setInterval(fetchCommerces, 60000);
     return () => clearInterval(interval);
   }, []);
@@ -227,10 +229,32 @@ export default function CommercePage() {
     }
   };
 
+  const handleDeleteCommerce = async () => {
+    if (!commerceToDelete) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:5000/api/commerces/${commerceToDelete}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (!response.ok) throw new Error('Error deleting commerce');
+      toast.success('Comercio eliminado');
+      fetchCommerces();
+    } catch (error) {
+      toast.error('Error al eliminar el comercio');
+    } finally {
+      setIsDeleteModalOpen(false);
+      setCommerceToDelete(null);
+    }
+  };
+
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Gestionar Comercios</h1>
+        <h1 className="text-2xl font-bold text-gray-800">Comercios</h1>
         <button
           onClick={() => {
             setEditingId(null);
@@ -263,14 +287,15 @@ export default function CommercePage() {
             });
             setIsModalOpen(true);
           }}
-          className="flex items-center px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors"
+          className="flex items-center px-2 py-1.5 sm:px-4 sm:py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors text-sm sm:text-base"
         >
-          <Plus className="w-5 h-5 mr-2" />
-          Crear Comercio
+          <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
+          <span className="sm:hidden">Crear</span>
+          <span className="hidden sm:inline">Crear</span>
         </button>
       </div>
   
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-6">
         {commerces.map((commerce) => (
           <div 
             key={commerce._id}
@@ -280,7 +305,7 @@ export default function CommercePage() {
               href={`/views/commerce/${commerce._id}`}
               className="flex-1 cursor-pointer hover:opacity-90"
             >
-              <div className="relative h-48">
+              <div className="relative h-32 sm:h-48">
                 <img 
                   src={commerce.imageUrl.startsWith('http') 
                     ? commerce.imageUrl 
@@ -294,12 +319,12 @@ export default function CommercePage() {
                   {isBusinessOpen(commerce.schedule) ? 'Abierto' : 'Cerrado'}
                 </div>
               </div>
-              <div className="p-4">
-                <h3 className="text-lg font-semibold text-gray-800">{commerce.name}</h3>
-                <p className="text-sm text-gray-600 mt-2">{commerce.description}</p>
+              <div className="p-3 sm:p-4">
+                <h3 className="text-sm sm:text-lg font-semibold text-gray-800">{commerce.name}</h3>
+                <p className="text-xs sm:text-sm text-gray-600 mt-1 sm:mt-2 line-clamp-2">{commerce.description}</p>
               </div>
             </Link>
-            <div className="flex justify-end gap-2 p-4 pt-0">
+            <div className="flex justify-end gap-1 sm:gap-2 p-3 sm:p-4 pt-0">
               <button
                 onClick={() => {
                   const parsedSchedule = typeof commerce.schedule === 'string' 
@@ -327,36 +352,56 @@ export default function CommercePage() {
                   setEditingId(commerce._id);
                   setIsModalOpen(true);
                 }}
-                className="p-1.5 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
+                className="p-1 sm:p-2 md:p-2.5 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
               >
-                <Pencil className="w-4 h-4" />
+                <Pencil className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5" />
               </button>
               <button
-                onClick={async () => {
-                  if (!confirm('¿Estás seguro de que quieres eliminar este comercio?')) return;
-                  try {
-                    const token = localStorage.getItem('token');
-                    const response = await fetch(`http://localhost:5000/api/commerces/${commerce._id}`, {
-                      method: 'DELETE',
-                      headers: {
-                        'Authorization': `Bearer ${token}`
-                      }
-                    });
-                    if (!response.ok) throw new Error('Error deleting commerce');
-                    toast.success('Comercio eliminado');
-                    fetchCommerces();
-                  } catch (error) {
-                    toast.error('Error al eliminar el comercio');
-                  }
+                onClick={() => {
+                  setCommerceToDelete(commerce._id);
+                  setIsDeleteModalOpen(true);
                 }}
-                className="p-1.5 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                className="p-1 sm:p-2 md:p-2.5 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5" />
               </button>
             </div>
           </div>
         ))}
       </div>
+
+      {/* Modal de confirmación de eliminación */}
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4">
+            <div className="p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                Confirmar eliminación
+              </h3>
+              <p className="text-gray-600 mb-6">
+                ¿Estás seguro de que quieres eliminar este comercio? Esta acción no se puede deshacer.
+              </p>
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => {
+                    setIsDeleteModalOpen(false);
+                    setCommerceToDelete(null);
+                  }}
+                  className="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleDeleteCommerce}
+                  className="px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded-lg transition-colors"
+                >
+                  Eliminar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -528,7 +573,7 @@ export default function CommercePage() {
                               className="w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                               placeholder="https://facebook.com/tucomercio"
                             />
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#1877F2]">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
                               <Facebook className="w-5 h-5" />
                             </span>
                           </div>
@@ -555,7 +600,7 @@ export default function CommercePage() {
                               className="w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                               placeholder="https://instagram.com/tucomercio"
                             />
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#E4405F]">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
                               <Instagram className="w-5 h-5" />
                             </span>
                           </div>
@@ -582,7 +627,7 @@ export default function CommercePage() {
                               className="w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                               placeholder="https://wa.me/tuNumero"
                             />
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#25D366]">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
                               <MessageCircle className="w-5 h-5" />
                             </span>
                           </div>
@@ -593,81 +638,73 @@ export default function CommercePage() {
                     {/* Imagen */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Imagen
+                        Imagen del Comercio
                       </label>
-                      <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-emerald-500 transition-colors">
-                        <div className="space-y-1 text-center">
-                          <svg
-                            className="mx-auto h-12 w-12 text-gray-400"
-                            stroke="currentColor"
-                            fill="none"
-                            viewBox="0 0 48 48"
-                            aria-hidden="true"
-                          >
-                            <path
-                              d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
-                              strokeWidth={2}
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          </svg>
-                          <div className="flex text-sm text-gray-600">
-                            <label
-                              htmlFor="file-upload"
-                              className="relative cursor-pointer rounded-md font-medium text-emerald-600 hover:text-emerald-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-emerald-500"
-                            >
-                              <span>Subir archivo</span>
-                              <input
-                                id="file-upload"
-                                type="file"
-                                accept="image/*"
-                                className="sr-only"
-                                onChange={(e) => {
-                                  const file = e.target.files?.[0];
-                                  if (file) {
-                                    setFormData({ ...formData, imageFile: file });
-                                  }
-                                }}
-                              />
-                            </label>
-                            <p className="pl-1">o arrastrar y soltar</p>
-                          </div>
-                          <p className="text-xs text-gray-500">PNG, JPG, GIF hasta 10MB</p>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            setFormData({ ...formData, imageFile: file });
+                          }
+                        }}
+                        className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+                      />
+                      {(formData.imageUrl || formData.imageFile) && (
+                        <div className="mt-2">
+                          <img
+                            src={formData.imageFile 
+                              ? URL.createObjectURL(formData.imageFile)
+                              : formData.imageUrl.startsWith('http') 
+                                ? formData.imageUrl 
+                                : `http://localhost:5000${formData.imageUrl}`
+                            }
+                            alt="Preview"
+                            className="w-full h-32 object-cover rounded-lg"
+                          />
                         </div>
-                      </div>
+                      )}
                     </div>
                   </div>
                   
                   {/* Tercera Columna - Horarios */}
-                  <div className=" h-full flex flex-col">
-                    <h3 className="text-sm font-medium ">Horarios</h3>
-                    <div className=" overflow-y-auto">
-                      {[
-                        ['Lunes', 'monday'],
-                        ['Martes', 'tuesday'],
-                        ['Miercoles', 'wednesday'],
-                        ['Jueves', 'thursday'],
-                        ['Viernes', 'friday'],
-                        ['Sábado', 'saturday'],
-                        ['Domingo', 'sunday']
-                      ].map(([label, day]) => (
-                        <div key={day} className=" p-3 rounded-lg">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="font-medium">{label}</span>
-                            <label className="flex items-center space-x-2">
+                  <div className="space-y-6">
+                    <h3 className="text-lg font-medium text-gray-700">Horarios de Atención</h3>
+                    {Object.entries(formData.schedule).map(([day, schedule]) => {
+                      const dayNames: { [key: string]: string } = {
+                        monday: 'Lunes',
+                        tuesday: 'Martes',
+                        wednesday: 'Miércoles',
+                        thursday: 'Jueves',
+                        friday: 'Viernes',
+                        saturday: 'Sábado',
+                        sunday: 'Domingo'
+                      };
+                      
+                      return (
+                        <div key={day} className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <label className="text-sm font-medium text-gray-700">
+                              {dayNames[day]}
+                            </label>
+                            <label className="flex items-center">
                               <input
                                 type="checkbox"
-                                checked={formData.schedule[day as keyof Schedule].isClosed}
+                                checked={schedule.isClosed}
                                 onChange={(e) => setFormData({
                                   ...formData,
                                   schedule: {
                                     ...formData.schedule,
-                                    [day]: { ...formData.schedule[day as keyof Schedule], isClosed: e.target.checked }
+                                    [day]: {
+                                      ...schedule,
+                                      isClosed: e.target.checked
+                                    }
                                   }
                                 })}
-                                className="rounded text-emerald-500 focus:ring-emerald-500"
+                                className="mr-2"
                               />
-                              <span className="text-sm">Cerrado</span>
+                              <span className="text-sm text-gray-600">Cerrado</span>
                             </label>
                           </div>
                           <div className="grid grid-cols-2 gap-2">
@@ -678,7 +715,7 @@ export default function CommercePage() {
                                 ...formData,
                                 schedule: {
                                   ...formData.schedule,
-                                  [day]: { ...formData.schedule[day as keyof Schedule], start: e.target.value }
+                                  [day]: {...formData.schedule[day as keyof Schedule], start: e.target.value }
                                 }
                               })}
                               className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
@@ -691,7 +728,7 @@ export default function CommercePage() {
                                 ...formData,
                                 schedule: {
                                   ...formData.schedule,
-                                  [day]: { ...formData.schedule[day as keyof Schedule], end: e.target.value }
+                                  [day]: {...formData.schedule[day as keyof Schedule], end: e.target.value }
                                 }
                               })}
                               className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
@@ -699,8 +736,8 @@ export default function CommercePage() {
                             />
                           </div>
                         </div>
-                      ))}
-                    </div>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -708,13 +745,13 @@ export default function CommercePage() {
                   <button
                     type="button"
                     onClick={() => setIsModalOpen(false)}
-                    className="px-6 py-2.5 text-gray-700 hover:text-gray-900 font-medium rounded-lg hover:bg-gray-100 transition-colors"
+                    className="px-6 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
-                    className="px-6 py-2.5 bg-emerald-500 text-white font-medium rounded-lg hover:bg-emerald-600 transition-colors focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
+                    className="px-6 py-2 bg-emerald-500 text-white font-medium rounded-lg hover:bg-emerald-600 transition-colors focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
                   >
                     {editingId ? 'Actualizar' : 'Crear'}
                   </button>
@@ -727,3 +764,5 @@ export default function CommercePage() {
     </div>
   );
 }
+
+

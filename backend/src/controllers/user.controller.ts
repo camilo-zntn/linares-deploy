@@ -271,3 +271,145 @@ export const updateUser = async (req: Request, res: Response) => {
     });
   }
 };
+
+
+// Agregar comercio a favoritos
+export const addToFavorites = async (req: Request, res: Response) => {
+  try {
+    const { commerceId } = req.body;
+    const userId = (req as any).user.userId; // Cambiar de .id a .userId
+
+    const user = await UserModel.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'Usuario no encontrado'
+      });
+    }
+
+    // Verificar si ya está en favoritos
+    if (user.favoriteCommerces.includes(commerceId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'El comercio ya está en favoritos'
+      });
+    }
+
+    // Agregar a favoritos
+    user.favoriteCommerces.push(commerceId);
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Comercio agregado a favoritos',
+      favoriteCommerces: user.favoriteCommerces
+    });
+
+  } catch (error) {
+    console.error('Error al agregar a favoritos:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al agregar a favoritos'
+    });
+  }
+};
+
+// Remover comercio de favoritos
+export const removeFromFavorites = async (req: Request, res: Response) => {
+  try {
+    const { commerceId } = req.params;
+    const userId = (req as any).user.userId; // Cambiar de .id a .userId
+
+    const user = await UserModel.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'Usuario no encontrado'
+      });
+    }
+
+    // Remover de favoritos
+    user.favoriteCommerces = user.favoriteCommerces.filter(
+      (id) => id.toString() !== commerceId
+    );
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Comercio removido de favoritos',
+      favoriteCommerces: user.favoriteCommerces
+    });
+
+  } catch (error) {
+    console.error('Error al remover de favoritos:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al remover de favoritos'
+    });
+  }
+};
+
+// Obtener comercios favoritos del usuario
+export const getFavoriteCommerces = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.userId; // Cambiar de .id a .userId
+
+    const user = await UserModel.findById(userId)
+      .populate({
+        path: 'favoriteCommerces',
+        populate: {
+          path: 'category',
+          select: 'name'
+        }
+      });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'Usuario no encontrado'
+      });
+    }
+
+    res.json({
+      success: true,
+      favoriteCommerces: user.favoriteCommerces
+    });
+
+  } catch (error) {
+    console.error('Error al obtener favoritos:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener favoritos'
+    });
+  }
+};
+
+// Verificar si un comercio está en favoritos
+export const checkIfFavorite = async (req: Request, res: Response) => {
+  try {
+    const { commerceId } = req.params;
+    const userId = (req as any).user.userId; // Cambiar de .id a .userId
+
+    const user = await UserModel.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'Usuario no encontrado'
+      });
+    }
+
+    const isFavorite = user.favoriteCommerces.includes(commerceId);
+
+    res.json({
+      success: true,
+      isFavorite
+    });
+
+  } catch (error) {
+    console.error('Error al verificar favorito:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al verificar favorito'
+    });
+  }
+};

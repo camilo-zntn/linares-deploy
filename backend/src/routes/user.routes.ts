@@ -1,5 +1,16 @@
 import { Router } from 'express';
-import { getAllUsers, updateUserStatus, deleteUser, updateUserRole, assignCommerceToUser, updateUser } from '../controllers/user.controller';
+import { 
+  getAllUsers, 
+  updateUserStatus, 
+  deleteUser, 
+  updateUserRole, 
+  assignCommerceToUser, 
+  updateUser,
+  addToFavorites,
+  removeFromFavorites,
+  getFavoriteCommerces,
+  checkIfFavorite
+} from '../controllers/user.controller';
 import { authMiddleware, isAdmin } from '../middlewares/auth.middleware';
 
 const router = Router();
@@ -16,5 +27,11 @@ router.put('/:userId/role', authMiddleware, isAdmin, updateUserRole);
 router.put('/:userId/commerce', authMiddleware, isAdmin, assignCommerceToUser);
 // Actualizar información del usuario
 router.put('/:userId', authMiddleware, isAdmin, updateUser);
+
+// Nuevas rutas para favoritos
+router.post('/favorites', authMiddleware, addToFavorites);
+router.delete('/favorites/:commerceId', authMiddleware, removeFromFavorites);
+router.get('/favorites', authMiddleware, getFavoriteCommerces);
+router.get('/favorites/check/:commerceId', authMiddleware, checkIfFavorite);
 
 export default router;

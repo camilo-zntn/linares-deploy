@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { UserModel } from '../models/user.model';
+import { CustomRequest } from '../interfaces/custom';
 
 // Define interface for decoded token
 declare global {
@@ -9,6 +10,8 @@ declare global {
       user?: {
         userId: string;
         role: string;
+        name?: string;
+        email?: string;
       }
     }
   }
@@ -19,15 +22,8 @@ interface DecodedToken {
   role: string;
 }
 
-interface AuthRequest extends Request {
-  user?: {
-    userId: string;
-    role: string;
-  };
-}
-
 export const authMiddleware = async (
-  req: AuthRequest,
+  req: CustomRequest,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
@@ -42,7 +38,7 @@ export const authMiddleware = async (
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'defaultSecret') as DecodedToken;
     
     const user = await UserModel.findById(decoded.userId)
-      .select('role isVerified')
+      .select('name email role isVerified')
       .lean();
 
     if (!user) {
@@ -52,7 +48,9 @@ export const authMiddleware = async (
 
     req.user = {
       userId: decoded.userId,
-      role: decoded.role
+      role: decoded.role,
+      name: user.name,
+      email: user.email
     };
 
     next();
@@ -63,7 +61,7 @@ export const authMiddleware = async (
 };
 
 export const isAdmin = (
-  req: AuthRequest, 
+  req: CustomRequest, 
   res: Response, 
   next: NextFunction
 ): void => {
@@ -75,7 +73,7 @@ export const isAdmin = (
 };
 
 export const isCommerce = (
-  req: AuthRequest, 
+  req: CustomRequest, 
   res: Response, 
   next: NextFunction
 ): void => {
@@ -87,7 +85,7 @@ export const isCommerce = (
 };
 
 export const isVerified = (
-  req: AuthRequest,
+  req: CustomRequest,
   res: Response,
   next: NextFunction
 ): void => {
@@ -96,4 +94,42 @@ export const isVerified = (
     return;
   }
   next();
+};
+
+// Nuevo middleware opcional para solicitudes de soporte
+export const optionalAuthMiddleware = async (
+  req: CustomRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'defaultSecret') as DecodedToken;
+        
+        const user = await UserModel.findById(decoded.userId)
+          .select('name email role isVerified')
+          .lean();
+
+        if (user) {
+          req.user = {
+            userId: decoded.userId,
+            role: decoded.role,
+            name: user.name,
+            email: user.email
+          };
+        }
+      } catch (error) {
+        // Si el token es inválido, continuar sin usuario
+        console.log('Token inválido, continuando sin autenticación');
+      }
+    }
+    
+    next();
+  } catch (error) {
+    console.error('Error en middleware opcional:', error);
+    next();
+  }
 };
