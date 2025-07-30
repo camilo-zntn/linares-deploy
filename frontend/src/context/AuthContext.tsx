@@ -9,7 +9,7 @@ interface User {
   name: string;
   email: string;
   role: string;
-  department: string | { _id: string; name: string; };
+  rut: string; // Agregar el campo rut
 }
 
 interface Message {

@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'react-hot-toast';
 import { Clock, Phone, Mail, Globe, Facebook, Instagram, MessageCircle, Heart, Loader2 } from 'lucide-react';
+// Importar la configuración de API
+import { apiRoutes } from '../../../config/api';
 
 interface DaySchedule {
   start: string;
@@ -66,7 +68,7 @@ export default function HomePage() {
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/categories', {
+      const response = await fetch(apiRoutes.categories, {
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json'
@@ -84,7 +86,7 @@ export default function HomePage() {
   const fetchCommercesByCategory = async (categoryId: string) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/categories/${categoryId}/commerces`, {
+      const response = await fetch(apiRoutes.commerces(categoryId), {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -100,13 +102,12 @@ export default function HomePage() {
     }
   };
 
-  // Nuevas funciones para manejar favoritos
   const fetchUserFavorites = async () => {
     try {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch('http://localhost:5000/api/users/favorites', {
+      const response = await fetch(apiRoutes.favorites, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

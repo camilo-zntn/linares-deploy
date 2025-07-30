@@ -20,6 +20,7 @@ import logRoutes from './routes/log.routes';
 import categoryRoutes from './routes/category.routes';
 import commerceRoutes from './routes/commerce.routes';
 import requestRoutes from './routes/request.routes';
+import referralRoutes from './routes/referral.routes';
 
 // Inicializacion de Express
 const app = express();
@@ -46,6 +47,7 @@ app.use('/api/logs', logRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/commerces', commerceRoutes); 
 app.use('/api/requests', requestRoutes);
+app.use('/api/referrals', referralRoutes);
 
 // Banner de inicio
 console.log(chalk.cyan.bold(`

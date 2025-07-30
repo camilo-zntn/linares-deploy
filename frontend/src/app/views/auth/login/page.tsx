@@ -10,10 +10,13 @@ interface LoginResponse {
   token: string;
   user: {
     _id: string;
-    name: string;
     email: string;
+    name: string;
     role: string;
     commerceId?: string;
+    rut: string;
+    referralCode: string;
+    referralCount: number;
   };
   message?: string;
   resetPasswordAvailable?: boolean;
@@ -99,12 +102,16 @@ export default function Login() {
         return;
       }
 
+      // En la función handleSubmit, actualizar userToStore:
       const userToStore = {
         _id: data.user._id,
-        name: data.user.name,
         email: data.user.email,
+        name: data.user.name,
         role: data.user.role,
-        commerceId: data.user.commerceId  
+        commerceId: data.user.commerceId,
+        rut: data.user.rut,
+        referralCode: data.user.referralCode,
+        referralCount: data.user.referralCount
       };
 
       localStorage.setItem('token', data.token);

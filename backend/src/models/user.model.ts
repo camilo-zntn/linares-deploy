@@ -1,8 +1,10 @@
 import { Schema, model, Document } from 'mongoose';
+import { validateRut } from '../utils/rutValidator';
+import { generateUniqueReferralCode } from '../utils/referralGenerator';
 
 export interface IUser extends Document {
   _id: string;
-  username: string;
+  rut: string;
   email: string;
   password: string;
   name: string;
@@ -14,12 +16,26 @@ export interface IUser extends Document {
   resetPasswordToken?: string;
   resetPasswordExpires?: Date;
   commerceId?: string;
-  favoriteCommerces: string[]; // Nuevo campo para favoritos
+  favoriteCommerces: string[];
+  // Nuevos campos para sistema de referidos
+  referralCode: string;
+  referredBy?: string;
+  referralCount: number;
 }
 
 const userSchema = new Schema({
   // Autenticacion
-  username: { type: String, required: true, unique: true },
+  rut: { 
+    type: String, 
+    required: true, 
+    unique: true,
+    validate: {
+      validator: function(rut: string) {
+        return validateRut(rut).isValid;
+      },
+      message: 'RUT inválido'
+    }
+  },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   name: { type: String, required: true },
@@ -34,8 +50,36 @@ const userSchema = new Schema({
   resetPasswordExpires: { type: Date, default: null },
   // Referencia al comercio
   commerceId: { type: Schema.Types.ObjectId, ref: 'Commerce', default: null },
-  // Nuevo campo para favoritos
-  favoriteCommerces: [{ type: Schema.Types.ObjectId, ref: 'Commerce', default: [] }]
+  // Campo para favoritos
+  favoriteCommerces: [{ type: Schema.Types.ObjectId, ref: 'Commerce', default: [] }],
+  // Nuevos campos para sistema de referidos
+  referralCode: { 
+    type: String, 
+    required: true, 
+    unique: true,
+    index: true
+  },
+  referredBy: { 
+    type: String, 
+    default: null,
+    index: true
+  },
+  referralCount: { 
+    type: Number, 
+    default: 0
+  }
+});
+
+// Middleware pre-save para generar referralCode si no existe
+userSchema.pre('save', async function(next) {
+  if (!this.referralCode) {
+    try {
+      this.referralCode = await generateUniqueReferralCode();
+    } catch (error) {
+      return next(error as Error);
+    }
+  }
+  next();
 });
 
 export const UserModel = model<IUser>('User', userSchema);

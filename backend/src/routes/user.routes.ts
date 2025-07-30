@@ -9,14 +9,18 @@ import {
   addToFavorites,
   removeFromFavorites,
   getFavoriteCommerces,
-  checkIfFavorite
+  checkIfFavorite,
+  checkRutAvailability
 } from '../controllers/user.controller';
 import { authMiddleware, isAdmin } from '../middlewares/auth.middleware';
+import { validateRutMiddleware } from '../utils/rutValidator';
 
 const router = Router();
 
 // Obtener todos los usuarios
 router.get('/all', authMiddleware, isAdmin, getAllUsers);
+// Verificar disponibilidad de RUT
+router.get('/check-rut/:rut', authMiddleware, checkRutAvailability);
 // Actualizar el estado de un usuario
 router.put('/:userId/status', authMiddleware, isAdmin, updateUserStatus);
 // Eliminar un usuario del sistema
@@ -25,10 +29,10 @@ router.delete('/:id', authMiddleware, isAdmin, deleteUser);
 router.put('/:userId/role', authMiddleware, isAdmin, updateUserRole);
 // Asignar comercio a un usuario
 router.put('/:userId/commerce', authMiddleware, isAdmin, assignCommerceToUser);
-// Actualizar información del usuario
-router.put('/:userId', authMiddleware, isAdmin, updateUser);
+// Actualizar información del usuario (solo admin puede cambiar RUT)
+router.put('/:userId', authMiddleware, updateUser);
 
-// Nuevas rutas para favoritos
+// Rutas para favoritos
 router.post('/favorites', authMiddleware, addToFavorites);
 router.delete('/favorites/:commerceId', authMiddleware, removeFromFavorites);
 router.get('/favorites', authMiddleware, getFavoriteCommerces);

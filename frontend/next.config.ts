@@ -13,23 +13,22 @@ const nextConfig: NextConfig = {
         minimizer: [
           new TerserPlugin({
             terserOptions: {
-              parse: { ecma: 8 },
+              parse: { ecma: 8 as any },
               compress: { 
-                ecma: 5, 
-                warnings: false
+                ecma: 5 as any
               },
               mangle: { safari10: true },
               output: { 
-                ecma: 5,
-                ascii_only: true,
+                ecma: 5 as any,
+                ascii_only: false, // Permitir caracteres UTF-8
                 comments: false
               }
             }
           })
         ]
       };
-    }
-
+    } 
+    
     if (dev && !isServer) {
       console.log('\x1b[36m%s\x1b[0m', `
 ╔═══════════════════════════════════════════════╗
@@ -54,18 +53,27 @@ const nextConfig: NextConfig = {
                 loader: 'string-replace-loader',
                 options: {
                   multiple: [
-                    { search: /\bdigitalizacion\b/g, replace: 'digitalización' },
-                    { search: /\bcategoria\b/g, replace: 'categoría' },
-                    { search: /\bcategorias\b/g, replace: 'categorías' },
-                    { search: /\bcontrasena\b/g, replace: 'contraseña' },
-                    { search: /\bsesion\b/g, replace: 'sesión' },
-                    { search: /\bvalidacion\b/g, replace: 'validación' },
+                    // Solo aplicar en strings literales, no en imports
+                    // Patrones más específicos para evitar conflictos
+                    { search: /\bfuncion\b/g, replace: 'función' },
                     { search: /\binformacion\b/g, replace: 'información' },
-                    { search: /\bseccion\b/g, replace: 'sección' },
-                    { search: /\bcodigo\b/g, replace: 'código' },
+                    { search: /\bnotificacion\b/g, replace: 'notificación' },
+                    { search: /\bautenticacion\b/g, replace: 'autenticación' },
+                    { search: /\bvalidacion\b/g, replace: 'validación' },
+                    { search: /\bverificacion\b/g, replace: 'verificación' },
+                    { search: /\bregistracion\b/g, replace: 'registración' },
+                    { search: /\bnavegacion\b/g, replace: 'navegación' },
+                    { search: /\boperacion\b/g, replace: 'operación' },
+                    { search: /\bsesion\b/g, replace: 'sesión' },
+                    { search: /\bversion\b/g, replace: 'versión' },
                     { search: /\bpagina\b/g, replace: 'página' },
-                    { search: /\bdocumentacion\b/g, replace: 'documentación' },
-                    { search: /\banos\b/g, replace: 'años' },
+                    { search: /\bcodigo\b/g, replace: 'código' },
+                    { search: /\busuario\b/g, replace: 'usuario' },
+                    { search: /\bcontrasena\b/g, replace: 'contraseña' },
+                    // Palabras específicas con ñ
+                    { search: /\bano\b/g, replace: 'año' },
+                    { search: /\bnino\b/g, replace: 'niño' },
+                    { search: /\bespanol\b/g, replace: 'español' },
                   ]
                 }
               }

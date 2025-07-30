@@ -44,7 +44,7 @@ export const sendVerificationEmail = async (email: string, code: string): Promis
     const transporter = await createTransporter();
     
     const mailOptions = {
-      from: `"Sistema de Digitalizacion" <${process.env.EMAIL_USER}>`,
+      from: `"Linares" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: 'Verificacion de Cuenta',
       html: `
@@ -114,7 +114,7 @@ export const sendResetPasswordEmail = async (email: string, resetToken: string):
     const resetLink = `${process.env.FRONTEND_URL}/views/auth/recovery?token=${resetToken}`;
     
     const mailOptions = {
-      from: `"Sistema de Digitalizacion" <${process.env.EMAIL_USER}>`,
+      from: `"Linares" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: 'Recuperacion de Contraseña',
       html: `

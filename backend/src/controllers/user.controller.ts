@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { UserModel } from '../models/user.model';
+import { validateRut } from '../utils/rutValidator';
 
 export const getAllUsers = async (req: Request, res: Response) => {
   try {
@@ -410,6 +411,40 @@ export const checkIfFavorite = async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       message: 'Error al verificar favorito'
+    });
+  }
+};
+
+// Función para verificar disponibilidad de RUT
+export const checkRutAvailability = async (req: Request, res: Response) => {
+  try {
+    const { rut } = req.params;
+    
+    // Validar formato del RUT
+    const validation = validateRut(rut);
+    if (!validation.isValid) {
+      return res.status(400).json({
+        success: false,
+        message: validation.message,
+        available: false
+      });
+    }
+    
+    // Buscar si el RUT ya existe
+    const existingUser = await UserModel.findOne({ rut: validation.cleanRut });
+    
+    res.json({
+      success: true,
+      available: !existingUser,
+      message: existingUser ? 'RUT ya está en uso' : 'RUT disponible'
+    });
+    
+  } catch (error) {
+    console.error('Error al verificar disponibilidad de RUT:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al verificar RUT',
+      available: false
     });
   }
 };

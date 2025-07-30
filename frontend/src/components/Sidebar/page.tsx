@@ -130,6 +130,12 @@ export default function Sidebar() {
           icon: FolderHeart,
           href: '/views/saved', // Corregir la ruta
           description: 'Comercios Guardados'
+        },
+        {
+          title: 'Perfil',
+          icon: FolderHeart,
+          href: '/views/profile', // Corregir la ruta
+          description: 'Datos personales'
         }
       ]
     },
@@ -157,6 +163,10 @@ export default function Sidebar() {
           }
           // Filtrar elementos solo para commerce
           if (subItem.commerceOnly && userData?.role?.toLowerCase() !== 'commerce') {
+            return false;
+          }
+          // Ocultar perfil si no hay sesión iniciada
+          if (subItem.title === 'Perfil' && !userData) {
             return false;
           }
           return true;

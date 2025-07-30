@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { UserModel } from '../models/user.model';
 import { sendVerificationEmail, sendResetPasswordEmail } from '../config/nodemailer.config';
+import { generateUniqueReferralCode } from '../utils/referralGenerator';
 
 const generateVerificationCode = (): string => {
   const randomNumber = Math.floor(Math.random() * 1000000);
@@ -64,15 +65,18 @@ export const login = async (req: Request, res: Response) => {
       { expiresIn: '24h' }
     );
 
-    // 5. Enviar respuesta exitosa
+    // 5. Enviar respuesta exitosa con campos de referidos incluidos
     res.json({
       token,
       user: {
-        id: user._id,
+        _id: user._id,
         email: user.email,
         name: user.name,
         role: user.role,
-        commerceId: user.commerceId  
+        commerceId: user.commerceId,
+        rut: user.rut,
+        referralCode: user.referralCode,
+        referralCount: user.referralCount
       }
     });
 
@@ -85,23 +89,35 @@ export const login = async (req: Request, res: Response) => {
 
 export const register = async (req: Request, res: Response) => {
   try {
-    // 1. Validar datos de entrada
-    const { email, password, name, username } = req.body; 
+    const { email, password, name, rut, referralCode } = req.body; 
 
-    // 2. Verificar usuario existente
+    // Verificar usuario existente
     const existingUser = await UserModel.findOne({ 
-      $or: [{ email }, { username }]
+      $or: [{ email }, { rut }]
     });
     
     if (existingUser) {
       return res.status(400).json({ 
         message: existingUser.email === email ? 
           'El correo ya esta registrado' : 
-          'El nombre de usuario ya esta registrado'
+          'El RUT ya esta registrado'
       });
     }
 
-    // 3. Crear nuevo usuario
+    // Validar código de referidos si se proporciona
+    let referredByUser = null;
+    if (referralCode) {
+      referredByUser = await UserModel.findOne({ referralCode });
+      if (!referredByUser) {
+        return res.status(400).json({ 
+          message: 'Código de invitación inválido'
+        });
+      }
+    }
+
+    // Generar código de referidos único para el nuevo usuario
+    const newUserReferralCode = await generateUniqueReferralCode();
+
     const hashedPassword = await bcrypt.hash(password, 10);
     const verificationCode = generateVerificationCode();
     
@@ -109,25 +125,34 @@ export const register = async (req: Request, res: Response) => {
       email,
       password: hashedPassword,
       name,
-      username,
+      rut,
       role: 'user',
       status: 'pending', 
       isVerified: false,
       verificationCode,
-      verificationCodeExpires: new Date(Date.now() + 15 * 60 * 1000)
+      verificationCodeExpires: new Date(Date.now() + 15 * 60 * 1000),
+      referralCode: newUserReferralCode,
+      referredBy: referralCode || null,
+      referralCount: 0
     });
 
-    // 4. Guardar usuario y enviar correo
     await user.save();
+    
+    // Incrementar contador de referidos del usuario que invitó
+    if (referredByUser) {
+      await UserModel.findByIdAndUpdate(
+        referredByUser._id,
+        { $inc: { referralCount: 1 } }
+      );
+    }
+    
     await sendVerificationEmail(email, verificationCode);
 
-    // 5. Enviar respuesta exitosa
     res.status(201).json({ 
       message: 'Usuario registrado. Revisa tu correo para verificar la cuenta.' 
     });
 
   } catch (error) {
-    // Manejo de errores
     console.error('Error en registro:', error);
     res.status(500).json({ message: 'Error en el servidor' });
   }

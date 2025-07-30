@@ -83,7 +83,7 @@ export default function Dashboard() {
       adminOnly: true
     },
     {
-      title: 'Gestionar Usuarios',
+      title: 'Usuarios',
       description: 'Gestiona usuarios del sistema',
       icon: Users,
       color: 'from-purple-600 to-purple-400',
@@ -91,7 +91,7 @@ export default function Dashboard() {
       adminOnly: true
     },
     {
-      title: 'Gestionar Categorias',
+      title: 'Categorias',
       description: 'Gestiona categorias de estantes',
       icon: FolderTree,
       color: 'from-indigo-600 to-indigo-400',
@@ -99,7 +99,7 @@ export default function Dashboard() {
       adminOnly: true
     },
     {
-      title: 'Gestionar Comercios',
+      title: 'Comercios',
       description: 'Gestiona los estantes digitales',
       icon: Layout,
       color: 'from-emerald-600 to-emerald-400',
@@ -120,6 +120,14 @@ export default function Dashboard() {
       icon: Layout,
       color: 'from-emerald-600 to-emerald-400',
       link: '/views/saved',
+      adminOnly: false
+    },
+    {
+      title: 'Perfil',
+      description: 'Datos personales',
+      icon: Layout,
+      color: 'from-emerald-600 to-emerald-400',
+      link: '/views/profile',
       adminOnly: false
     },
     {

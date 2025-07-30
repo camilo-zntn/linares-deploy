@@ -7,11 +7,12 @@ import {
   verifyResetToken,
   resetPassword 
 } from '../controllers/auth.controller';
+import { validateRutMiddleware } from '../utils/rutValidator';
 
 const router = Router();
 
-// Registro de usuarios
-router.post('/register', register);
+// Registro de usuarios (con validación de RUT)
+router.post('/register', validateRutMiddleware('rut'), register);
 // Verificacion de cuenta
 router.post('/verify', verifyAccount); 
 // Inicio de sesion 
