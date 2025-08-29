@@ -23,6 +23,86 @@ interface ReferralStats {
   referredUsers: any[];
 }
 
+interface ConfirmationModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: (password: string) => void;
+  isLoading: boolean;
+}
+
+const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ isOpen, onClose, onConfirm, isLoading }) => {
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+
+  // Limpiar el campo de contraseña cada vez que se abre el modal
+  useEffect(() => {
+    if (isOpen) {
+      setPassword('');
+      setShowPassword(false);
+    }
+  }, [isOpen]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password.trim()) {
+      onConfirm(password);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          Confirmar cambios
+        </h3>
+        <p className="text-gray-600 mb-4">
+          Para confirmar los cambios en tus datos personales, ingresa tu contraseña actual:
+        </p>
+        <form onSubmit={handleSubmit}>
+          <div className="relative mb-4">
+            <input
+              type={showPassword ? 'text' : 'password'}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+              placeholder="Contraseña actual"
+              required
+              autoFocus
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          </div>
+          <div className="flex gap-3 justify-end">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={isLoading}
+              className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={isLoading || !password.trim()}
+              className="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 disabled:opacity-50 flex items-center gap-2"
+            >
+              {isLoading && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
+              Confirmar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 const ProfilePage = () => {
   const { user, token } = useAuth();
   
@@ -74,12 +154,16 @@ const ProfilePage = () => {
     referrals: false
   });
 
+  // Estados para modal de confirmación
+  const [showConfirmationModal, setShowConfirmationModal] = useState(false);
+  const [pendingUserData, setPendingUserData] = useState<UserData | null>(null);
+
   // Cargar datos del usuario al montar el componente
   useEffect(() => {
     if (user) {
       const initialData = {
         rut: (user as any).rut || '',
-        fullName: (user as any).fullName || '',
+        fullName: (user as any).name || '',
         email: (user as any).email || ''
       };
       setUserData(initialData);
@@ -116,16 +200,10 @@ const ProfilePage = () => {
   // Función para manejar cambios en los datos del usuario
   const handleUserDataChange = (field: keyof UserData, value: string) => {
     if (field === 'rut') {
-      const formattedRut = formatRutAsUserTypes(value);
-      setUserData(prev => ({ ...prev, [field]: formattedRut }));
-      
-      // Verificar disponibilidad del RUT solo para admin
-      if ((user as any)?.role === 'admin' && formattedRut !== originalUserData.rut) {
-        checkRutAvailability(formattedRut);
-      }
-    } else {
-      setUserData(prev => ({ ...prev, [field]: value }));
+      return; // No permitir cambios en el RUT
     }
+    
+    setUserData(prev => ({ ...prev, [field]: value }));
   };
 
   // Función para verificar disponibilidad del RUT
@@ -182,33 +260,42 @@ const ProfilePage = () => {
   // Función para verificar si se puede guardar
   const canSave = () => {
     const hasChanges = JSON.stringify(userData) !== JSON.stringify(originalUserData);
-    const isRutValid = (user as any)?.role !== 'admin' || !userData.rut || rutStatus.available !== false;
-    return hasChanges && isRutValid && userData.fullName.trim() && userData.email.trim();
+    return hasChanges && userData.fullName.trim() && userData.email.trim();
   };
 
   // Función para guardar datos personales
   const handleSavePersonalData = async () => {
+    setPendingUserData(userData);
+    setShowConfirmationModal(true);
+  };
+
+  // Función para confirmar cambios con contraseña
+  const confirmDataChanges = async (password: string) => {
+    if (!pendingUserData) return;
+    
     setIsLoading(true);
     
     try {
-      const response = await fetch('/api/user/profile', {
+      const response = await fetch('/api/users/profile', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          rut: cleanRut(userData.rut),
-          fullName: userData.fullName.trim(),
-          email: userData.email.trim()
+          rut: cleanRut(pendingUserData.rut),
+          fullName: pendingUserData.fullName.trim(),
+          email: pendingUserData.email.trim(),
+          currentPassword: password
         })
       });
       
       if (response.ok) {
         const updatedUser = await response.json();
-        setOriginalUserData(userData);
+        setOriginalUserData(pendingUserData);
         setIsEditing(false);
-        setRutStatus({ checking: false, available: null, message: '' });
+        setShowConfirmationModal(false);
+        setPendingUserData(null);
         toast.success('Datos actualizados correctamente');
       } else {
         const errorData = await response.json();
@@ -270,7 +357,7 @@ const ProfilePage = () => {
     setIsLoading(true);
     
     try {
-      const response = await fetch('/api/user/change-password', {
+      const response = await fetch('/api/users/change-password', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -337,7 +424,17 @@ const ProfilePage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen ">
+      {/* Modal de confirmación */}
+      <ConfirmationModal
+        isOpen={showConfirmationModal}
+        onClose={() => {
+          setShowConfirmationModal(false);
+          setPendingUserData(null);
+        }}
+        onConfirm={confirmDataChanges}
+        isLoading={isLoading}
+      />
       {/* Título simple sin banner */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-4">
         <h1 className="text-2xl font-semibold text-gray-900 flex items-center gap-2">
@@ -377,33 +474,11 @@ const ProfilePage = () => {
                       type="text"
                       value={userData.rut}
                       onChange={(e) => handleUserDataChange('rut', e.target.value)}
-                      disabled={!isEditing || (user as any)?.role !== 'admin'}
-                      className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent ${
-                        !isEditing || (user as any)?.role !== 'admin' ? 'bg-gray-100 text-gray-500 cursor-not-allowed opacity-60' : ''
-                      }`}
-                      placeholder="Ingresa tu RUT"
+                      disabled={true}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-gray-100 text-gray-500 cursor-not-allowed opacity-60"
+                      placeholder="RUT"
                     />
-                    {/* Mensaje de disponibilidad del RUT (solo para admin) */}
-                    {isEditing && (user as any)?.role === 'admin' && userData.rut !== originalUserData.rut && (
-                      <div className="mt-1">
-                        {rutStatus.checking ? (
-                          <p className="text-xs text-blue-600">Verificando disponibilidad...</p>
-                        ) : rutStatus.available === true ? (
-                          <p className="text-xs text-green-600 flex items-center gap-1">
-                            <Check className="w-3 h-3" />
-                            {rutStatus.message}
-                          </p>
-                        ) : rutStatus.available === false ? (
-                          <p className="text-xs text-red-600 flex items-center gap-1">
-                            <X className="w-3 h-3" />
-                            {rutStatus.message}
-                          </p>
-                        ) : null}
-                      </div>
-                    )}
-                    {(user as any)?.role !== 'admin' && (
-                      <p className="text-xs text-gray-500 mt-1">Solo los administradores pueden modificar el RUT</p>
-                    )}
+                    <p className="text-xs text-gray-500 mt-1">El RUT no puede ser modificado</p>
                   </div>
                   
                   <div>
@@ -737,33 +812,11 @@ const ProfilePage = () => {
                     type="text"
                     value={userData.rut}
                     onChange={(e) => handleUserDataChange('rut', e.target.value)}
-                    disabled={!isEditing || (user as any)?.role !== 'admin'}
-                    className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent ${
-                      !isEditing || (user as any)?.role !== 'admin' ? 'bg-gray-100 text-gray-500 cursor-not-allowed opacity-60' : ''
-                    }`}
-                    placeholder="Ingresa tu RUT"
+                    disabled={true}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-gray-100 text-gray-500 cursor-not-allowed opacity-60"
+                    placeholder="RUT"
                   />
-                  {/* Mensaje de disponibilidad del RUT (solo para admin) */}
-                  {isEditing && (user as any)?.role === 'admin' && userData.rut !== originalUserData.rut && (
-                    <div className="mt-1">
-                      {rutStatus.checking ? (
-                        <p className="text-xs text-blue-600">Verificando disponibilidad...</p>
-                      ) : rutStatus.available === true ? (
-                        <p className="text-xs text-green-600 flex items-center gap-1">
-                          <Check className="w-3 h-3" />
-                          {rutStatus.message}
-                        </p>
-                      ) : rutStatus.available === false ? (
-                        <p className="text-xs text-red-600 flex items-center gap-1">
-                          <X className="w-3 h-3" />
-                          {rutStatus.message}
-                        </p>
-                      ) : null}
-                    </div>
-                  )}
-                  {(user as any)?.role !== 'admin' && (
-                    <p className="text-xs text-gray-500 mt-1">Solo los administradores pueden modificar el RUT</p>
-                  )}
+                  <p className="text-xs text-gray-500 mt-1">El RUT no puede ser modificado</p>
                 </div>
                 
                 <div>

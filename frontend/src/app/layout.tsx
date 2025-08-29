@@ -5,6 +5,7 @@ import { Toaster } from 'react-hot-toast';
 import { Inter } from 'next/font/google';
 import AuthCheck from '@/components/AuthCheck/page';
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -35,6 +36,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <html lang="es" className={inter.className} suppressHydrationWarning>
+      <head>
+        <link
+          rel="preload"
+          as="image"
+          href="/img/logo.png"
+          imageSizes="(max-width: 768px) 200px, (max-width: 1200px) 300px, 400px"
+          imageSrcSet="/_next/image?url=%2Fimg%2Flogo.png&w=256&q=85 256w, /_next/image?url=%2Fimg%2Flogo.png&w=384&q=85 384w, /_next/image?url=%2Fimg%2Flogo.png&w=640&q=85 640w"
+        />
+      </head>
       <body suppressHydrationWarning>
         <AuthProvider>
           <AuthCheck>
@@ -47,15 +57,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 }}
                 suppressHydrationWarning
               >
-                <img 
-                  src="https://www.corporacionlinares.cl/ordenesIngreso/assets/images/logo.png"
+                <Image 
+                  src="/img/logo.png"
                   alt="Logo Corporación"
+                  width={256}
+                  height={256}
                   className="w-64 h-auto"
                   style={{
                     opacity: isFading ? '0' : '1',
                     transform: isFading ? 'scale(0.95)' : 'scale(1)',
                     transition: 'all 0.8s ease-in-out'
                   }}
+                  priority
                 />
                 <div 
                   className="w-16 h-16 border-4 border-white border-t-transparent rounded-full animate-spin"

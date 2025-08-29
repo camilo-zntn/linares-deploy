@@ -84,6 +84,12 @@ const Navbar = () => {
                 disabled: false
             },
             {
+                icon: Users,
+                label: 'Mi Perfil',
+                path: '/views/profile',
+                disabled: false
+            },
+            {
                 icon: HelpCircle,
                 label: 'Ayuda',
                 path: '/views/help',

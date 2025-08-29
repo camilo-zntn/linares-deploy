@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Store, Mail, Phone, Globe, Facebook, Instagram, MessageCircle, MapPin, Building2, FileText, Save } from 'lucide-react';
+import { Store, Mail, Phone, Globe, Facebook, Instagram, MessageCircle, MapPin, Building2, FileText, Save, Clock } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 // Interfaces separadas para mejor mantenibilidad
@@ -56,6 +56,29 @@ const API_ENDPOINTS = {
   UPDATE_COMMERCE: (id: string) => `${API_BASE_URL}/api/commerces/commerce/${id}`,
 };
 
+// Horario por defecto para evitar errores
+const DEFAULT_SCHEDULE: Schedule = {
+  monday: { start: '09:00', end: '18:00', isClosed: false },
+  tuesday: { start: '09:00', end: '18:00', isClosed: false },
+  wednesday: { start: '09:00', end: '18:00', isClosed: false },
+  thursday: { start: '09:00', end: '18:00', isClosed: false },
+  friday: { start: '09:00', end: '18:00', isClosed: false },
+  saturday: { start: '09:00', end: '18:00', isClosed: false },
+  sunday: { start: '09:00', end: '18:00', isClosed: true }
+};
+
+// Contacto por defecto para evitar errores
+const DEFAULT_CONTACT: Contact = {
+  email: '',
+  phone: '',
+  website: '',
+  socialMedia: {
+    facebook: '',
+    instagram: '',
+    whatsapp: ''
+  }
+};
+
 export default function ManagementPage() {
   const router = useRouter();
   const [commerce, setCommerce] = useState<Commerce | null>(null);
@@ -102,7 +125,20 @@ export default function ManagementPage() {
 
   useEffect(() => {
     if (commerce) {
-      setFormData(commerce);
+      // Asegurar que los datos tengan la estructura correcta
+      const safeCommerce = {
+        ...commerce,
+        schedule: commerce.schedule || DEFAULT_SCHEDULE,
+        contact: {
+          ...DEFAULT_CONTACT,
+          ...commerce.contact,
+          socialMedia: {
+            ...DEFAULT_CONTACT.socialMedia,
+            ...commerce.contact?.socialMedia
+          }
+        }
+      };
+      setFormData(safeCommerce);
     }
   }, [commerce]);
 
@@ -131,6 +167,27 @@ export default function ManagementPage() {
     });
   };
 
+  const handleScheduleChange = (day: string, field: string, value: string | boolean) => {
+    setFormData(prev => {
+      if (!prev) return null;
+      
+      // Asegurar que schedule existe
+      const currentSchedule = prev.schedule || DEFAULT_SCHEDULE;
+      const currentDaySchedule = currentSchedule[day as keyof Schedule] || DEFAULT_SCHEDULE[day as keyof Schedule];
+      
+      return {
+        ...prev,
+        schedule: {
+          ...currentSchedule,
+          [day]: {
+            ...currentDaySchedule,
+            [field]: value
+          }
+        }
+      };
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
@@ -140,14 +197,23 @@ export default function ManagementPage() {
       const token = localStorage.getItem('token');
       if (!token || !formData || !commerce?._id) return;
 
-      // Crear el objeto de datos para enviar
+      // Crear el objeto de datos para enviar con validaciones
       const dataToSend = {
         name: formData.name || '',
         description: formData.description || '',
         category: formData.category?._id || '',
-        schedule: formData.schedule || {},
+        schedule: formData.schedule || DEFAULT_SCHEDULE,
         googleMapsIframe: formData.googleMapsIframe || '',
-        contact: formData.contact || {}
+        contact: {
+          email: formData.contact?.email || '',
+          phone: formData.contact?.phone || '',
+          website: formData.contact?.website || '',
+          socialMedia: {
+            facebook: formData.contact?.socialMedia?.facebook || '',
+            instagram: formData.contact?.socialMedia?.instagram || '',
+            whatsapp: formData.contact?.socialMedia?.whatsapp || ''
+          }
+        }
       };
 
       const response = await fetch(API_ENDPOINTS.UPDATE_COMMERCE(commerce._id), {
@@ -172,7 +238,7 @@ export default function ManagementPage() {
     } finally {
       setIsSubmitting(false);
     }
-};
+  };
 
   if (!mounted) {
     return null; // Evitar cualquier renderizado hasta que el componente esté montado
@@ -233,6 +299,36 @@ export default function ManagementPage() {
               </div>
             </div>
 
+            {/* Ubicacion */}
+            <div className="bg-white rounded-xl p-6 space-y-6">
+              <div className="flex items-center gap-2 mb-4">
+                <MapPin className="w-5 h-5 text-emerald-600" />
+                <h2 className="text-xl font-semibold">Ubicacion</h2>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Google Maps Iframe</label>
+                <div className="relative">
+                  <MapPin className="absolute top-3 left-3 w-5 h-5 text-gray-400" />
+                  <textarea
+                    name="googleMapsIframe"
+                    value={formData.googleMapsIframe || ''}
+                    onChange={handleInputChange}
+                    rows={4}
+                    className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+                  />
+                </div>
+                {formData.googleMapsIframe && (
+                  <div className="mt-4 rounded-lg overflow-hidden border border-gray-200">
+                    <div dangerouslySetInnerHTML={{ __html: formData.googleMapsIframe }} />
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Columna Derecha */}
+          <div className="space-y-8">
             {/* Informacion de Contacto */}
             <div className="bg-white rounded-xl p-6 space-y-6">
               <div className="flex items-center gap-2 mb-4">
@@ -284,10 +380,7 @@ export default function ManagementPage() {
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Columna Derecha */}
-          <div className="space-y-8">
             {/* Redes Sociales */}
             <div className="bg-white rounded-xl p-6 space-y-6">
               <div className="flex items-center gap-2 mb-4">
@@ -338,30 +431,62 @@ export default function ManagementPage() {
               </div>
             </div>
 
-            {/* Ubicacion */}
+            {/* Horarios de Atencion */}
             <div className="bg-white rounded-xl p-6 space-y-6">
               <div className="flex items-center gap-2 mb-4">
-                <MapPin className="w-5 h-5 text-emerald-600" />
-                <h2 className="text-xl font-semibold">Ubicacion</h2>
+                <Clock className="w-5 h-5 text-emerald-600" />
+                <h2 className="text-xl font-semibold">Horarios de Atencion</h2>
               </div>
               
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Google Maps Iframe</label>
-                <div className="relative">
-                  <MapPin className="absolute top-3 left-3 w-5 h-5 text-gray-400" />
-                  <textarea
-                    name="googleMapsIframe"
-                    value={formData.googleMapsIframe || ''}
-                    onChange={handleInputChange}
-                    rows={4}
-                    className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
-                  />
-                </div>
-                {formData.googleMapsIframe && (
-                  <div className="mt-4 rounded-lg overflow-hidden border border-gray-200">
-                    <div dangerouslySetInnerHTML={{ __html: formData.googleMapsIframe }} />
-                  </div>
-                )}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {Object.entries(formData.schedule || DEFAULT_SCHEDULE).map(([day, schedule]) => {
+                  const dayNames: { [key: string]: string } = {
+                    monday: 'Lunes',
+                    tuesday: 'Martes',
+                    wednesday: 'Miercoles',
+                    thursday: 'Jueves',
+                    friday: 'Viernes',
+                    saturday: 'Sabado',
+                    sunday: 'Domingo'
+                  };
+                  
+                  const safeSchedule = schedule || DEFAULT_SCHEDULE[day as keyof Schedule];
+                  
+                  return (
+                    <div key={day} className="space-y-2 p-3 border border-gray-200 rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <label className="text-sm font-medium text-gray-700">
+                          {dayNames[day]}
+                        </label>
+                        <label className="flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={safeSchedule.isClosed || false}
+                            onChange={(e) => handleScheduleChange(day, 'isClosed', e.target.checked)}
+                            className="mr-2"
+                          />
+                          <span className="text-xs text-gray-600">Cerrado</span>
+                        </label>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <input
+                          type="time"
+                          value={safeSchedule.start || '09:00'}
+                          onChange={(e) => handleScheduleChange(day, 'start', e.target.value)}
+                          className="w-full px-2 py-1 text-sm border rounded focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+                          disabled={safeSchedule.isClosed || false}
+                        />
+                        <input
+                          type="time"
+                          value={safeSchedule.end || '18:00'}
+                          onChange={(e) => handleScheduleChange(day, 'end', e.target.value)}
+                          className="w-full px-2 py-1 text-sm border rounded focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+                          disabled={safeSchedule.isClosed || false}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
@@ -369,9 +494,11 @@ export default function ManagementPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg ${isSubmitting 
-                ? 'bg-gray-400 cursor-not-allowed' 
-                : 'bg-emerald-600 hover:bg-emerald-700'} text-white font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2`}
+              className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg ${
+                isSubmitting 
+                  ? 'bg-gray-400 cursor-not-allowed' 
+                  : 'bg-emerald-600 hover:bg-emerald-700'
+              } text-white font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2`}
             >
               <Save className="w-5 h-5" />
               {isSubmitting ? 'Guardando...' : 'Guardar Cambios'}

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSearchParams } from 'next/navigation';
 import { User, Mail, Lock, Eye, EyeOff, Gift } from 'lucide-react';
+import Image from 'next/image';
 
 // Utilidades para validación de RUT
 const cleanRut = (rut: string): string => {
@@ -253,10 +254,13 @@ const Register = () => {
     <div className="min-h-screen flex">
       <div className="hidden lg:flex w-1/2 bg-emerald-500">
         <div className="w-full flex items-center justify-center">
-          <img 
-            src="https://www.corporacionlinares.cl/ordenesIngreso/assets/images/logo.png" 
+          <Image 
+            src="/img/logo.png" 
             alt="Logo Corporacion" 
+            width={400}
+            height={400}
             className="max-w-md w-full object-contain p-8"
+            priority
           />
         </div>
       </div>

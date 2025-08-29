@@ -6,6 +6,7 @@ import {
   updateUserRole, 
   assignCommerceToUser, 
   updateUser,
+  updateUserProfile,
   addToFavorites,
   removeFromFavorites,
   getFavoriteCommerces,
@@ -21,6 +22,8 @@ const router = Router();
 router.get('/all', authMiddleware, isAdmin, getAllUsers);
 // Verificar disponibilidad de RUT
 router.get('/check-rut/:rut', authMiddleware, checkRutAvailability);
+// Actualizar perfil del usuario autenticado
+router.put('/profile', authMiddleware, updateUserProfile);
 // Actualizar el estado de un usuario
 router.put('/:userId/status', authMiddleware, isAdmin, updateUserStatus);
 // Eliminar un usuario del sistema

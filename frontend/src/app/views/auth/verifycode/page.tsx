@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Image from 'next/image';
 
 const VerifyCode = () => {
   const router = useRouter();
@@ -86,10 +87,13 @@ const VerifyCode = () => {
     <div className="min-h-screen flex">
       <div className="hidden lg:flex w-1/2 bg-emerald-500">
         <div className="w-full flex items-center justify-center">
-          <img 
-            src="https://www.corporacionlinares.cl/ordenesIngreso/assets/images/logo.png" 
+          <Image 
+            src="/img/logo.png" 
             alt="Logo Corporacion" 
+            width={400}
+            height={400}
             className="max-w-md w-full object-contain p-8"
+            priority
           />
         </div>
       </div>

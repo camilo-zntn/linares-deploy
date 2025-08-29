@@ -234,12 +234,12 @@ export default function RequestsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
           <MessageSquare className="h-8 w-8 text-emerald-500" />
-          <h1 className="text-3xl font-bold text-gray-800">Gestión de Solicitudes</h1>
+          <h1 className="text-2xl font-bold text-gray-800">Gestión de Solicitudes</h1>
         </div>
 
         {/* Filtros */}

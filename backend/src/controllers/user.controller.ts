@@ -274,6 +274,98 @@ export const updateUser = async (req: Request, res: Response) => {
 };
 
 
+// Actualizar perfil del usuario autenticado
+export const updateUserProfile = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.userId;
+    const { rut, fullName, email } = req.body;
+
+    // Validar que se proporcionaron los campos requeridos
+    if (!fullName || !email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Nombre completo y correo son requeridos'
+      });
+    }
+
+    // Validar RUT si se proporciona
+    if (rut && !validateRut(rut)) {
+      return res.status(400).json({
+        success: false,
+        message: 'RUT inválido'
+      });
+    }
+
+    // Verificar si el email ya existe (excluyendo el usuario actual)
+    if (email) {
+      const existingUser = await UserModel.findOne({ 
+        email, 
+        _id: { $ne: userId } 
+      });
+      if (existingUser) {
+        return res.status(400).json({
+          success: false,
+          message: 'El correo electrónico ya está en uso'
+        });
+      }
+    }
+
+    // Verificar si el RUT ya existe (excluyendo el usuario actual)
+    if (rut) {
+      const existingRutUser = await UserModel.findOne({ 
+        rut, 
+        _id: { $ne: userId } 
+      });
+      if (existingRutUser) {
+        return res.status(400).json({
+          success: false,
+          message: 'El RUT ya está registrado'
+        });
+      }
+    }
+
+    // Preparar datos para actualizar
+    const updateData: any = {
+      name: fullName,
+      email
+    };
+
+    // Solo actualizar RUT si se proporciona (para admin)
+    if (rut) {
+      updateData.rut = rut;
+    }
+
+    // Buscar y actualizar el usuario
+    const user = await UserModel.findByIdAndUpdate(
+      userId,
+      updateData,
+      { new: true }
+    ).select('-password');
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'Usuario no encontrado'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Perfil actualizado correctamente',
+      user
+    });
+
+  } catch (error) {
+    console.error('Error al actualizar perfil:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al actualizar perfil',
+      error: error instanceof Error ? error.message : 'Error desconocido'
+    });
+  }
+};
+
+
 // Agregar comercio a favoritos
 export const addToFavorites = async (req: Request, res: Response) => {
   try {

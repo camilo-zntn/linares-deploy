@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { toast, Toast as ToasterToast } from 'react-hot-toast';
 
 interface LoginResponse {
@@ -132,10 +133,17 @@ export default function Login() {
     <div className="min-h-screen flex">
       <div className="hidden lg:flex w-1/2 bg-emerald-500">
         <div className="w-full flex items-center justify-center">
-          <img 
-            src="https://www.corporacionlinares.cl/ordenesIngreso/assets/images/logo.png" 
+          <Image 
+            src="/img/logo.png" 
             alt="Logo Corporacion" 
+            width={256}
+            height={256}
             className="max-w-md w-full object-contain p-8"
+            priority
+            quality={85}
+            placeholder="blur"
+            blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
+            sizes="(max-width: 768px) 200px, (max-width: 1200px) 300px, 400px"
           />
         </div>
       </div>
