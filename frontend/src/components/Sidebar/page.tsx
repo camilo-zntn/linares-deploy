@@ -11,7 +11,8 @@ import {
   MapPinned,
   House,
   LogOut,
-  MessageCircleQuestion 
+  MessageCircleQuestion, 
+  BarChart2
 } from 'lucide-react';
 
 interface UserData {
@@ -101,6 +102,13 @@ export default function Sidebar() {
           href: '/views/commerce',
           adminOnly: true,
           description: 'Crear nuevos estantes digitales'
+        },
+        {
+          title: 'Resumen General',
+          icon: BarChart2,
+          href: '/views/analytics',
+          adminOnly: true,
+          description: 'Visualización de estadísticas generales'
         }
       ]
     },

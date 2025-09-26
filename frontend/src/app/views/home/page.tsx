@@ -248,19 +248,37 @@ export default function HomePage() {
 
       {selectedCategory && !selectedCommerce && (
         <>
-          <div className="flex items-center gap-4 mb-6">
-            <button
-              onClick={() => {
-                setSelectedCategory(null);
-                setCommerces([]);
-              }}
-              className="text-gray-600 hover:text-gray-800"
-            >
-              ← Volver a categorías
-            </button>
-            <h1 className="text-2xl font-bold text-gray-800">
-              {categories.find(c => c._id === selectedCategory)?.name}
-            </h1>
+          <div className="relative flex flex-row items-center mb-6">
+            <div className="absolute left-0 z-10">
+              <button
+                onClick={() => {
+                  setSelectedCategory(null);
+                  setCommerces([]);
+                }}
+                className="flex items-center gap-2 px-3 py-1.5 bg-white text-emerald-600 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 group border border-emerald-100 hover:bg-emerald-500 hover:border-emerald-500 text-sm whitespace-nowrap"
+              >
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  width="16" 
+                  height="16" 
+                  viewBox="0 0 24 24" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  strokeWidth="2" 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                  className="group-hover:-translate-x-1 transition-transform duration-300"
+                >
+                  <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+                <span className="font-medium group-hover:text-white">Categorías</span>
+              </button>
+            </div>
+            <div className="flex-1 text-center px-4">
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-800 truncate mx-auto">
+                {categories.find(c => c._id === selectedCategory)?.name}
+              </h1>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">

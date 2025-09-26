@@ -21,6 +21,7 @@ import categoryRoutes from './routes/category.routes';
 import commerceRoutes from './routes/commerce.routes';
 import requestRoutes from './routes/request.routes';
 import referralRoutes from './routes/referral.routes';
+import analyticsRoutes from './routes/analyticsRoutes';
 
 // Inicializacion de Express
 const app = express();
@@ -48,6 +49,7 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/commerces', commerceRoutes); 
 app.use('/api/requests', requestRoutes);
 app.use('/api/referrals', referralRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 // Banner de inicio
 console.log(chalk.cyan.bold(`
