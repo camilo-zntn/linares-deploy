@@ -12,7 +12,9 @@ import {
   FileText, 
   Clock,
   Eye,
-  MessageCircle
+  MessageCircle,
+  Store,
+  Users
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
@@ -37,6 +39,69 @@ interface Message {
   senderName?: string;
   senderEmail?: string;
 }
+
+interface RequestItemProps {
+  request: Request;
+  onOpen: (request: Request) => void;
+  onDelete: (request: Request, e: React.MouseEvent) => void;
+  formatDate: (date: string) => string;
+  getStatusColor: (status: string) => string;
+  getStatusText: (status: string) => string;
+  getTypeText: (type: string) => string;
+}
+
+const RequestItem = ({
+  request,
+  onOpen,
+  onDelete,
+  formatDate,
+  getStatusColor,
+  getStatusText,
+  getTypeText
+}: RequestItemProps) => (
+  <div
+    key={request._id}
+    onClick={() => onOpen(request)}
+    className="p-4 hover:bg-gray-50 transition-colors duration-150 cursor-pointer group"
+  >
+    <div className="flex items-start justify-between">
+      <div className="flex-1">
+        <div className="flex items-center gap-2 mb-2">
+          {request.type === 'problem' ? (
+            <Bug className="h-4 w-4 text-red-500" />
+          ) : (
+            <Lightbulb className="h-4 w-4 text-emerald-500" />
+          )}
+          <h3 className="font-medium text-gray-900">{request.subject}</h3>
+        </div>
+        <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
+          <div className="flex items-center gap-1">
+            <Mail className="h-4 w-4" />
+            <span>{request.email}</span>
+          </div>
+          <span>•</span>
+          <div className="flex items-center gap-1">
+            <Clock className="h-4 w-4" />
+            <span>{formatDate(request.createdAt)}</span>
+          </div>
+          <span>•</span>
+          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(request.status)}`}>
+            {getStatusText(request.status)}
+          </span>
+        </div>
+      </div>
+      <div className="flex items-center gap-2">
+        <button
+          onClick={(e) => onDelete(request, e)}
+          className="opacity-0 group-hover:opacity-100 transition-all duration-200 p-1.5 hover:bg-red-50 rounded-full border border-red-200 hover:border-red-300 shadow-sm hover:shadow-md ml-2"
+          title="Eliminar solicitud"
+        >
+          <X className="h-4 w-4 text-red-500 hover:text-red-700" />
+        </button>
+      </div>
+    </div>
+  </div>
+);
 
 export default function RequestsPage() {
   const { user } = useAuth();
@@ -178,6 +243,15 @@ export default function RequestsPage() {
     return typeMatch && statusMatch;
   });
 
+  // Separar solicitudes por tipo de usuario
+  const commerceRequests = filteredRequests.filter(request => 
+    request.userId && requests.find(r => r._id === request.userId)?.role === 'commerce'
+  );
+  
+  const userRequests = filteredRequests.filter(request => 
+    !request.userId || requests.find(r => r._id === request.userId)?.role !== 'commerce'
+  );
+
   const openModal = (request: Request) => {
     setSelectedRequest(request);
     setIsModalOpen(true);
@@ -277,81 +351,70 @@ export default function RequestsPage() {
           </div>
         </div>
 
-        {/* Lista de Solicitudes */}
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          <div className="p-6 border-b border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-800">
-              Solicitudes ({filteredRequests.length})
-            </h2>
-          </div>
-          
-          <div className="divide-y divide-gray-200">
-            {filteredRequests.length === 0 ? (
-              <div className="p-8 text-center text-gray-500">
-                <MessageSquare className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                <p>No hay solicitudes que coincidan con los filtros seleccionados.</p>
-              </div>
-            ) : (
-              filteredRequests.map((request) => (
-                <div
-                  key={request._id}
-                  className="p-6 hover:bg-gray-50 cursor-pointer transition-colors relative group"
-                  onClick={() => openModal(request)}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        {request.type === 'problem' ? (
-                          <Bug className="h-5 w-5 text-red-500" />
-                        ) : (
-                          <Lightbulb className="h-5 w-5 text-emerald-500" />
-                        )}
-                        <span className="font-medium text-gray-900">
-                          {request.subject}
-                        </span>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          getStatusColor(request.status)
-                        }`}>
-                          {getStatusText(request.status)}
-                        </span>
-                      </div>
-                      
-                      <div className="flex items-center gap-4 text-sm text-gray-600 mb-2">
-                        <div className="flex items-center gap-1">
-                          <Mail className="h-4 w-4" />
-                          {request.email}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-4 w-4" />
-                          {formatDate(request.createdAt)}
-                        </div>
-                      </div>
-                      
-                      <p className="text-gray-600 text-sm line-clamp-2">
-                        {request.description}
-                      </p>
-                    </div>
-                    
-                    <div className="flex items-center gap-2 ml-4">
-                      {request.type === 'problem' ? (
-                        <MessageCircle className="h-5 w-5 text-blue-500" />
-                      ) : (
-                        <Eye className="h-5 w-5 text-gray-500" />
-                      )}
-                      
-                      {/* Botón de eliminar reubicado */}
-                      <button
-                        onClick={(e) => showDeleteConfirmation(request, e)}
-                        className="opacity-0 group-hover:opacity-100 transition-all duration-200 p-1.5 hover:bg-red-50 rounded-full border border-red-200 hover:border-red-300 shadow-sm hover:shadow-md ml-2"
-                        title="Eliminar solicitud"
-                      >
-                        <X className="h-4 w-4 text-red-500 hover:text-red-700" />
-                      </button>
-                    </div>
-                  </div>
+        {/* Grid de dos columnas para las solicitudes */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Columna de Solicitudes de Comercios */}
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div className="p-6 border-b border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
+                <Store className="h-5 w-5 text-emerald-500" />
+                Solicitudes de Comercios ({commerceRequests.length})
+              </h2>
+            </div>
+            
+            <div className="divide-y divide-gray-200">
+              {commerceRequests.length === 0 ? (
+                <div className="p-8 text-center text-gray-500">
+                  <Store className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                  <p>No hay solicitudes de comercios que coincidan con los filtros.</p>
                 </div>
-              ))
-            )}
+              ) : (
+                commerceRequests.map((request) => (
+                  <RequestItem 
+                    key={request._id} 
+                    request={request} 
+                    onOpen={openModal}
+                    onDelete={showDeleteConfirmation}
+                    formatDate={formatDate}
+                    getStatusColor={getStatusColor}
+                    getStatusText={getStatusText}
+                    getTypeText={getTypeText}
+                  />
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Columna de Solicitudes de Usuarios */}
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div className="p-6 border-b border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
+                <Users className="h-5 w-5 text-blue-500" />
+                Solicitudes de Usuarios ({userRequests.length})
+              </h2>
+            </div>
+            
+            <div className="divide-y divide-gray-200">
+              {userRequests.length === 0 ? (
+                <div className="p-8 text-center text-gray-500">
+                  <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                  <p>No hay solicitudes de usuarios que coincidan con los filtros.</p>
+                </div>
+              ) : (
+                userRequests.map((request) => (
+                  <RequestItem 
+                    key={request._id} 
+                    request={request} 
+                    onOpen={openModal}
+                    onDelete={showDeleteConfirmation}
+                    formatDate={formatDate}
+                    getStatusColor={getStatusColor}
+                    getStatusText={getStatusText}
+                    getTypeText={getTypeText}
+                  />
+                ))
+              )}
+            </div>
           </div>
         </div>
       </div>
