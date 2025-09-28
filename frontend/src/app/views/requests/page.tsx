@@ -135,7 +135,7 @@ export default function RequestsPage() {
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Configurar WebSocket
+  // Configurar WebSocket - SIN selectedRequest en las dependencias
   useEffect(() => {
     if (user) {
       const token = localStorage.getItem('token');
@@ -143,40 +143,120 @@ export default function RequestsPage() {
         auth: {
           token: token,
           email: user.email
-        }
+        },
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+        timeout: 20000,
+        forceNew: true
       });
-
+  
       socketInstance.on('connect', () => {
         console.log('Conectado a WebSocket');
         setIsConnected(true);
+        
+        // Si es admin, unirse a todas las salas de solicitudes existentes
+        if (user.role === 'admin' && requests.length > 0) {
+          console.log('Admin uniéndose a todas las salas de solicitudes');
+          requests.forEach(request => {
+            socketInstance.emit('join_request_room', { requestId: request._id });
+          });
+        }
       });
-
-      socketInstance.on('disconnect', () => {
-        console.log('Desconectado de WebSocket');
+  
+      socketInstance.on('disconnect', (reason) => {
+        console.log('Desconectado de WebSocket:', reason);
         setIsConnected(false);
       });
-
+  
+      socketInstance.on('connect_error', (error) => {
+        console.error('Error de conexión WebSocket:', error);
+        setIsConnected(false);
+      });
+  
+      socketInstance.on('reconnect', (attemptNumber) => {
+        console.log('Reconectado a WebSocket después de', attemptNumber, 'intentos');
+        setIsConnected(true);
+        
+        // Reunirse a las salas después de reconectar
+        if (user.role === 'admin' && requests.length > 0) {
+          requests.forEach(request => {
+            socketInstance.emit('join_request_room', { requestId: request._id });
+          });
+        }
+        
+        // Si hay una solicitud seleccionada, reunirse a su sala
+        if (selectedRequest) {
+          socketInstance.emit('join_request_room', { 
+            requestId: selectedRequest._id, 
+            email: user.role !== 'admin' ? selectedRequest.email : undefined 
+          });
+        }
+      });
+  
+      socketInstance.on('reconnect_error', (error) => {
+        console.error('Error de reconexión WebSocket:', error);
+      });
+  
       // Escuchar nuevos mensajes
       socketInstance.on('new_message', (data) => {
         console.log('Nuevo mensaje recibido:', data);
         const { requestId, message, status } = data;
         
         // Actualizar la solicitud seleccionada si coincide
-        if (selectedRequest && selectedRequest._id === requestId) {
-          console.log('Actualizando solicitud seleccionada con nuevo mensaje');
-          setSelectedRequest(prev => prev ? {
-            ...prev,
-            messages: [...prev.messages, message],
-            status: status
-          } : null);
-        }
-
-        // Actualizar la lista de solicitudes
-        setRequests(prev => prev.map(req => 
-          req._id === requestId 
-            ? { ...req, status: status }
-            : req
-        ));
+        setSelectedRequest(prev => {
+          if (prev && prev._id === requestId) {
+            console.log('Actualizando solicitud seleccionada con nuevo mensaje');
+            
+            // Verificar si ya existe un mensaje temporal con el mismo contenido y timestamp similar
+            const existingTempMessage = prev.messages.find(msg => 
+              msg._id.startsWith('temp-') && 
+              msg.message === message.message &&
+              msg.sender === message.sender &&
+              Math.abs(new Date(msg.timestamp).getTime() - new Date(message.timestamp).getTime()) < 5000
+            );
+            
+            if (existingTempMessage) {
+              // Reemplazar el mensaje temporal con el mensaje real del servidor
+              return {
+                ...prev,
+                messages: prev.messages.map(msg => 
+                  msg._id === existingTempMessage._id ? message : msg
+                ),
+                status: status
+              };
+            } else {
+              // Agregar nuevo mensaje (de otro usuario)
+              return {
+                ...prev,
+                messages: [...prev.messages, message],
+                status: status
+              };
+            }
+          }
+          return prev;
+        });
+      
+        // Actualizar la lista de solicitudes con el nuevo mensaje y estado
+        setRequests(prev => prev.map(req => {
+          if (req._id === requestId) {
+            // Verificar si el mensaje ya existe en la lista para evitar duplicados
+            const messageExists = req.messages.some(msg => 
+              msg._id === message._id || 
+              (msg.message === message.message && 
+               msg.sender === message.sender && 
+               Math.abs(new Date(msg.timestamp).getTime() - new Date(message.timestamp).getTime()) < 1000)
+            );
+            
+            return {
+              ...req,
+              status: status,
+              messages: messageExists ? req.messages : [...req.messages, message]
+            };
+          }
+          return req;
+        }));
 
         // Scroll automático al final
         setTimeout(() => {
@@ -248,7 +328,7 @@ export default function RequestsPage() {
         socketInstance.disconnect();
       };
     }
-  }, [user, selectedRequest]);
+  }, [user]);
 
   // Función para cargar solicitudes
   const loadRequests = async () => {
@@ -311,18 +391,51 @@ export default function RequestsPage() {
 
     setIsSending(true);
     
+    // Crear mensaje temporal para actualización optimista
+    const tempMessage: Message = {
+      _id: `temp-${Date.now()}`, // ID temporal
+      sender: user?.role === 'admin' ? 'admin' : 'user',
+      message: newMessage.trim(),
+      timestamp: new Date().toISOString(),
+      senderName: user?.name || 'Usuario',
+      senderEmail: user?.email || selectedRequest.email
+    };
+
+    // Actualización optimista - mostrar el mensaje inmediatamente
+    setSelectedRequest(prev => prev ? {
+      ...prev,
+      messages: [...prev.messages, tempMessage]
+    } : null);
+
+    // Limpiar el campo de mensaje inmediatamente
+    const messageToSend = newMessage.trim();
+    setNewMessage('');
+
+    // Scroll automático inmediato
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, 50);
+    
     try {
       // Enviar mensaje via WebSocket
       socket.emit('send_message', {
         requestId: selectedRequest._id,
-        message: newMessage.trim(),
+        message: messageToSend,
         email: user?.role === 'admin' ? undefined : selectedRequest.email
       });
 
-      setNewMessage('');
     } catch (error) {
       console.error('Error al enviar mensaje:', error);
       toast.error('Error al enviar mensaje');
+      
+      // Revertir la actualización optimista en caso de error
+      setSelectedRequest(prev => prev ? {
+        ...prev,
+        messages: prev.messages.filter(msg => msg._id !== tempMessage._id)
+      } : null);
+      
+      // Restaurar el mensaje en el campo de entrada
+      setNewMessage(messageToSend);
     } finally {
       setIsSending(false);
     }
@@ -366,6 +479,19 @@ export default function RequestsPage() {
       loadRequests();
     }
   }, [user]);
+
+  // Nuevo useEffect para unir al admin a todas las salas cuando se cargan las solicitudes
+  useEffect(() => {
+    if (user?.role === 'admin' && socket && socket.connected && requests.length > 0) {
+      console.log('Admin uniéndose a todas las salas de solicitudes');
+      requests.forEach(request => {
+        socket.emit('join_request_room', { requestId: request._id });
+      });
+    }
+  }, [requests, socket, user]);
+
+
+
 
   // Scroll automático al final de los mensajes
   useEffect(() => {
@@ -825,5 +951,4 @@ export default function RequestsPage() {
     </div>
   );
 }
-
 
