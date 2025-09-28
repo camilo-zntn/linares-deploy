@@ -10,8 +10,8 @@ const getApiUrl = () => {
     }
   }
   
-  // Fallback para desarrollo local
-  return 'http://localhost:5000';
+  // Usar la variable de entorno o fallback
+  return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 };
 
 export const API_BASE_URL = getApiUrl();
@@ -22,4 +22,14 @@ export const apiRoutes = {
   commerces: (categoryId: string) => `${API_BASE_URL}/api/categories/${categoryId}/commerces`,
   favorites: `${API_BASE_URL}/api/users/favorites`,
   uploads: (filename: string) => `${API_BASE_URL}/uploads/${filename}`,
+  // Agregar rutas para requests
+  requests: {
+    all: `${API_BASE_URL}/api/requests/all`,
+    myRequests: `${API_BASE_URL}/api/requests/my-requests`,
+    byId: (id: string) => `${API_BASE_URL}/api/requests/${id}`,
+    sendMessage: (id: string) => `${API_BASE_URL}/api/requests/${id}/message`,
+    updateStatus: (id: string) => `${API_BASE_URL}/api/requests/${id}/status`,
+    delete: (id: string) => `${API_BASE_URL}/api/requests/${id}`,
+    resolve: (id: string) => `${API_BASE_URL}/api/requests/${id}/resolve`
+  }
 };

@@ -7,6 +7,8 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import morgan from 'morgan';
 import path from 'path';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
 
 import chalk from 'chalk';
 
@@ -23,14 +25,32 @@ import requestRoutes from './routes/request.routes';
 import referralRoutes from './routes/referral.routes';
 import analyticsRoutes from './routes/analyticsRoutes';
 
+// Importar configuración de WebSocket
+import { setupSocketIO } from './config/socket.config';
+
 // Inicializacion de Express
 const app = express();
+const server = createServer(app);
+
+// Configurar Socket.IO
+const io = new Server(server, {
+  cors: {
+    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    methods: ["GET", "POST"]
+  }
+});
+
+// Configurar eventos de Socket.IO
+setupSocketIO(io);
 
 // Middlewares
 app.use(cors());
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Hacer io disponible en las rutas
+app.set('io', io);
 
 // Update the static file serving configuration
 app.use('/uploads', express.static(path.join(__dirname, '../uploads'), {
@@ -88,10 +108,15 @@ mongoose.connect(process.env.MONGODB_URI!)
   .then(() => {
     console.log(chalk.green.bold('\n✓ Base de datos:'), chalk.cyan('Conectada'));
     const PORT = process.env.PORT || 5000;
-    app.listen(PORT, () => {
+    server.listen(PORT, () => {
       console.log(
         chalk.yellow.bold('\n⚡ Servidor:'), 
         chalk.cyan(`http://localhost:${PORT}`),
+        '\n'
+      );
+      console.log(
+        chalk.green.bold('🔌 WebSocket:'), 
+        chalk.cyan('Configurado y listo'),
         '\n'
       );
     });

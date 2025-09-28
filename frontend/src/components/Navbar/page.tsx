@@ -107,6 +107,12 @@ const Navbar = () => {
                     disabled: false
                 },
                 {
+                    icon: Settings,
+                    label: 'Resumen General',
+                    path: '/views/analytics',
+                    disabled: false
+                },
+                {
                     icon: Users,
                     label: 'Usuarios',
                     path: '/views/users',
