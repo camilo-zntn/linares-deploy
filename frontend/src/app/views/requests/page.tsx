@@ -134,6 +134,7 @@ export default function RequestsPage() {
 
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messageRefreshInterval = useRef<NodeJS.Timeout | null>(null);
 
   // Configurar WebSocket - SIN selectedRequest en las dependencias
   useEffect(() => {
@@ -199,17 +200,55 @@ export default function RequestsPage() {
         console.error('Error de reconexión WebSocket:', error);
       });
   
-      // Escuchar nuevos mensajes
+      // Escuchar nuevos mensajes - MEJORADO CON LOGS DETALLADOS
       socketInstance.on('new_message', (data) => {
-        console.log('Nuevo mensaje recibido:', data);
+        console.log('🔔 [WEBSOCKET] Nuevo mensaje recibido:', data);
+        console.log('🔍 [WEBSOCKET] Detalles del mensaje:', {
+          requestId: data.requestId,
+          messageId: data.message._id,
+          sender: data.message.sender,
+          content: data.message.message,
+          timestamp: data.message.timestamp
+        });
+        
         const { requestId, message, status } = data;
+        
+        // Verificar si este mensaje es para la solicitud actualmente seleccionada
+        console.log('🎯 [WEBSOCKET] Verificando solicitud seleccionada:', {
+          solicitudSeleccionada: selectedRequest?._id,
+          mensajeParaSolicitud: requestId,
+          coincide: selectedRequest?._id === requestId
+        });
         
         // Actualizar la solicitud seleccionada si coincide
         setSelectedRequest(prev => {
           if (prev && prev._id === requestId) {
-            console.log('Actualizando solicitud seleccionada con nuevo mensaje');
+            console.log('🔄 [WEBSOCKET] Actualizando solicitud seleccionada con nuevo mensaje');
+            console.log('📋 [WEBSOCKET] Mensajes actuales:', prev.messages.length);
             
-            // Verificar si ya existe un mensaje temporal con el mismo contenido y timestamp similar
+            // Verificar si el mensaje ya existe para evitar duplicados
+            const messageExists = prev.messages.some(msg => {
+              const exists = msg._id === message._id || 
+                (msg.message === message.message && 
+                 msg.sender === message.sender && 
+                 Math.abs(new Date(msg.timestamp).getTime() - new Date(message.timestamp).getTime()) < 2000);
+              
+              if (exists) {
+                console.log('🔍 [WEBSOCKET] Mensaje duplicado detectado:', {
+                  existente: { id: msg._id, sender: msg.sender, message: msg.message },
+                  nuevo: { id: message._id, sender: message.sender, message: message.message }
+                });
+              }
+              
+              return exists;
+            });
+            
+            if (messageExists) {
+              console.log('📋 [WEBSOCKET] Mensaje ya existe, no se duplicará');
+              return prev;
+            }
+            
+            // Verificar si hay un mensaje temporal que reemplazar
             const existingTempMessage = prev.messages.find(msg => 
               msg._id.startsWith('temp-') && 
               msg.message === message.message &&
@@ -218,45 +257,65 @@ export default function RequestsPage() {
             );
             
             if (existingTempMessage) {
-              // Reemplazar el mensaje temporal con el mensaje real del servidor
-              return {
+              console.log('🔄 [WEBSOCKET] Reemplazando mensaje temporal con mensaje real');
+              const updatedRequest = {
                 ...prev,
                 messages: prev.messages.map(msg => 
                   msg._id === existingTempMessage._id ? message : msg
                 ),
                 status: status
               };
+              console.log('✅ [WEBSOCKET] Solicitud actualizada con mensaje reemplazado, total mensajes:', updatedRequest.messages.length);
+              return updatedRequest;
             } else {
-              // Agregar nuevo mensaje (de otro usuario)
-              return {
+              console.log('➕ [WEBSOCKET] Agregando nuevo mensaje');
+              const updatedRequest = {
                 ...prev,
                 messages: [...prev.messages, message],
                 status: status
               };
+              console.log('✅ [WEBSOCKET] Solicitud actualizada con nuevo mensaje, total mensajes:', updatedRequest.messages.length);
+              console.log('📝 [WEBSOCKET] Nuevo mensaje agregado:', {
+                id: message._id,
+                sender: message.sender,
+                content: message.message,
+                timestamp: message.timestamp
+              });
+              return updatedRequest;
             }
+          } else {
+            console.log('⏭️ [WEBSOCKET] Mensaje no es para la solicitud seleccionada, ignorando');
+            return prev;
           }
-          return prev;
         });
       
         // Actualizar la lista de solicitudes con el nuevo mensaje y estado
-        setRequests(prev => prev.map(req => {
-          if (req._id === requestId) {
-            // Verificar si el mensaje ya existe en la lista para evitar duplicados
-            const messageExists = req.messages.some(msg => 
-              msg._id === message._id || 
-              (msg.message === message.message && 
-               msg.sender === message.sender && 
-               Math.abs(new Date(msg.timestamp).getTime() - new Date(message.timestamp).getTime()) < 1000)
-            );
-            
-            return {
-              ...req,
-              status: status,
-              messages: messageExists ? req.messages : [...req.messages, message]
-            };
-          }
-          return req;
-        }));
+        setRequests(prev => {
+          console.log('📋 [WEBSOCKET] Actualizando lista general de solicitudes');
+          return prev.map(req => {
+            if (req._id === requestId) {
+              console.log('🔄 [WEBSOCKET] Actualizando solicitud en la lista:', req._id);
+              
+              // Verificar si el mensaje ya existe en la lista para evitar duplicados
+              const messageExists = req.messages.some(msg => 
+                msg._id === message._id || 
+                (msg.message === message.message && 
+                 msg.sender === message.sender && 
+                 Math.abs(new Date(msg.timestamp).getTime() - new Date(message.timestamp).getTime()) < 2000)
+              );
+              
+              const updatedReq = {
+                ...req,
+                status: status,
+                messages: messageExists ? req.messages : [...req.messages, message]
+              };
+              
+              console.log('✅ [WEBSOCKET] Solicitud en lista actualizada, total mensajes:', updatedReq.messages.length);
+              return updatedReq;
+            }
+            return req;
+          });
+        });
 
         // Scroll automático al final
         setTimeout(() => {
@@ -363,19 +422,35 @@ export default function RequestsPage() {
 
   // Función para unirse a una sala de chat
   const joinRequestRoom = (requestId: string, email?: string) => {
+    console.log('🏠 [ROOM] Intentando unirse a la sala:', requestId);
+    console.log('👤 [ROOM] Email del usuario:', email);
+    console.log('🔌 [ROOM] Estado del socket:', socket?.connected ? 'conectado' : 'desconectado');
+    
     if (socket && socket.connected) {
       // Salir de la sala anterior si existe
       if (currentRoom) {
+        console.log('🚪 [ROOM] Saliendo de la sala anterior:', currentRoom);
         socket.emit('leave_request_room', { requestId: currentRoom });
       }
 
       // Unirse a la nueva sala
+      console.log('🏠 [ROOM] Uniéndose a la nueva sala:', requestId);
       socket.emit('join_request_room', { requestId, email });
       setCurrentRoom(requestId);
 
-      socket.once('joined_room', () => {
-        console.log(`Unido a la sala del request ${requestId}`);
+      socket.once('joined_room', (data) => {
+        console.log('✅ [ROOM] Confirmación de unión a la sala:', data);
+        console.log(`🎯 [ROOM] Unido exitosamente a la sala del request ${requestId}`);
       });
+
+      // Agregar listener para errores de sala
+      socket.once('room_error', (error) => {
+        console.error('❌ [ROOM] Error al unirse a la sala:', error);
+        toast.error('Error al acceder a la solicitud');
+      });
+    } else {
+      console.error('❌ [ROOM] No se puede unir a la sala - Socket no conectado');
+      toast.error('Conexión no disponible');
     }
   };
 
@@ -474,11 +549,165 @@ export default function RequestsPage() {
     });
   };
 
+  // Función para recargar mensajes de una solicitud específica - MEJORADA
+  const reloadRequestMessages = async (requestId: string) => {
+    console.log(`🔄 [CHAT REFRESH] ===== INICIANDO RECARGA DE MENSAJES =====`);
+    console.log(`🔄 [CHAT REFRESH] Solicitud: ${requestId}`);
+    console.log(`🕐 [CHAT REFRESH] Timestamp: ${new Date().toLocaleTimeString()}`);
+    console.log(`🎯 [CHAT REFRESH] Solicitud seleccionada actual: ${selectedRequest?._id}`);
+    console.log(`📊 [CHAT REFRESH] Mensajes actuales en selectedRequest: ${selectedRequest?.messages?.length || 0}`);
+    
+    try {
+      // Verificar que tenemos una solicitud válida antes de hacer la petición
+      if (!requestId || requestId === 'undefined') {
+        console.error('❌ [CHAT REFRESH] ID de solicitud inválido:', requestId);
+        return;
+      }
+
+      // Corregir la URL - usar la función correctamente
+      const url = apiRoutes.requests.byId(requestId);
+      console.log(`🌐 [CHAT REFRESH] URL de solicitud: ${url}`);
+      
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const updatedRequest = await response.json();
+        console.log(`✅ [CHAT REFRESH] Respuesta de API recibida exitosamente`);
+        console.log(`📊 [CHAT REFRESH] Total de mensajes en respuesta: ${updatedRequest.messages?.length || 0}`);
+        console.log(`🆔 [CHAT REFRESH] ID de solicitud obtenida: ${updatedRequest._id}`);
+        console.log(`📝 [CHAT REFRESH] Mensajes obtenidos:`, updatedRequest.messages?.map((msg: Message) => ({
+          id: msg._id,
+          sender: msg.sender,
+          message: msg.message.substring(0, 50) + '...',
+          timestamp: msg.timestamp
+        })));
+        
+        // Verificar que la solicitud obtenida coincide with la esperada
+        if (updatedRequest._id !== requestId) {
+          console.warn('⚠️ [CHAT REFRESH] ID de solicitud no coincide:', {
+            esperado: requestId,
+            obtenido: updatedRequest._id
+          });
+          return;
+        }
+        
+        // Actualizar la solicitud seleccionada si es la misma
+        setSelectedRequest(prev => {
+          if (prev && prev._id === requestId) {
+            console.log(`🔄 [CHAT REFRESH] Actualizando selectedRequest`);
+            console.log(`📊 [CHAT REFRESH] Mensajes anteriores: ${prev.messages?.length || 0}`);
+            console.log(`📊 [CHAT REFRESH] Mensajes nuevos: ${updatedRequest.messages?.length || 0}`);
+            
+            const hasNewMessages = updatedRequest.messages?.length > prev.messages?.length;
+            if (hasNewMessages) {
+              console.log(`🆕 [CHAT REFRESH] Se detectaron nuevos mensajes!`);
+              console.log(`📈 [CHAT REFRESH] Diferencia: +${(updatedRequest.messages?.length || 0) - (prev.messages?.length || 0)} mensajes`);
+              
+              // Mostrar los nuevos mensajes
+              const newMessages = updatedRequest.messages?.slice(prev.messages?.length || 0);
+              console.log(`📝 [CHAT REFRESH] Nuevos mensajes detectados:`, newMessages?.map((msg: Message) => ({
+                id: msg._id,
+                sender: msg.sender,
+                message: msg.message,
+                timestamp: msg.timestamp
+              })));
+            } else {
+              console.log(`📊 [CHAT REFRESH] No hay nuevos mensajes`);
+            }
+            
+            console.log(`✅ [CHAT REFRESH] Retornando solicitud actualizada con ${updatedRequest.messages?.length || 0} mensajes`);
+            return updatedRequest;
+          } else {
+            console.log(`⏭️ [CHAT REFRESH] No se actualiza selectedRequest (no coincide o es null)`);
+            console.log(`🔍 [CHAT REFRESH] prev._id: ${prev?._id}, requestId: ${requestId}`);
+            return prev;
+          }
+        });
+
+        // Actualizar también en la lista general de solicitudes
+        setRequests(prevRequests => {
+          console.log(`📋 [CHAT REFRESH] Actualizando lista general de solicitudes`);
+          const updatedRequests = prevRequests.map(req => 
+            req._id === requestId ? updatedRequest : req
+          );
+          console.log(`✅ [CHAT REFRESH] Lista de solicitudes actualizada`);
+          return updatedRequests;
+        });
+        
+        console.log(`🏁 [CHAT REFRESH] ===== RECARGA COMPLETADA EXITOSAMENTE =====`);
+      } else {
+        console.error(`❌ [CHAT REFRESH] Error al obtener mensajes:`, response.status, response.statusText);
+        if (response.status === 404) {
+          console.error('❌ [CHAT REFRESH] Solicitud no encontrada - posible problema de sincronización');
+          toast.error('Solicitud no encontrada');
+        }
+      }
+    } catch (error) {
+      console.error('❌ [CHAT REFRESH] Error en la recarga de mensajes:', error);
+    }
+  };
+
   useEffect(() => {
     if (user) {
       loadRequests();
     }
   }, [user]);
+
+  // useEffect para recarga automática de mensajes
+  useEffect(() => {
+    // Limpiar intervalo anterior si existe
+    if (messageRefreshInterval.current) {
+      console.log('🧹 [CHAT REFRESH] Limpiando intervalo anterior');
+      clearInterval(messageRefreshInterval.current);
+      messageRefreshInterval.current = null;
+    }
+
+    // Solo activar recarga automática si hay una solicitud seleccionada, el modal está abierto y es de tipo 'problem'
+    if (selectedRequest && isModalOpen && selectedRequest.type === 'problem') {
+      console.log(`🚀 [CHAT REFRESH] Iniciando recarga automática para solicitud: ${selectedRequest._id}`);
+      console.log(`⏰ [CHAT REFRESH] Intervalo configurado: cada 3 segundos`);
+      console.log(`👤 [CHAT REFRESH] Usuario: ${user?.role || 'desconocido'}`);
+      console.log(`🏠 [CHAT REFRESH] Sala actual: ${currentRoom}`);
+      
+      // Esperar un poco antes de iniciar la recarga automática para evitar conflictos
+      const timeoutId = setTimeout(() => {
+        messageRefreshInterval.current = setInterval(() => {
+          console.log(`🔄 [CHAT REFRESH] ===== EJECUTANDO RECARGA AUTOMÁTICA =====`);
+          console.log(`🎯 [CHAT REFRESH] Solicitud actual: ${selectedRequest._id}`);
+          console.log(`🏠 [CHAT REFRESH] Sala actual: ${currentRoom}`);
+          
+          // Solo recargar si estamos en la sala correcta
+          if (currentRoom === selectedRequest._id) {
+            reloadRequestMessages(selectedRequest._id);
+          } else {
+            console.warn('⚠️ [CHAT REFRESH] No se recarga - sala no coincide:', {
+              salaActual: currentRoom,
+              solicitudSeleccionada: selectedRequest._id
+            });
+          }
+        }, 3000);
+      }, 1000); // Esperar 1 segundo antes de iniciar
+
+      return () => {
+        clearTimeout(timeoutId);
+        if (messageRefreshInterval.current) {
+          console.log('🧹 [CHAT REFRESH] Limpiando intervalo en cleanup');
+          clearInterval(messageRefreshInterval.current);
+          messageRefreshInterval.current = null;
+        }
+      };
+    } else {
+      console.log('⏸️ [CHAT REFRESH] Recarga automática pausada - Condiciones no cumplidas');
+      if (!selectedRequest) console.log('   - No hay solicitud seleccionada');
+      if (!isModalOpen) console.log('   - Modal no está abierto');
+      if (selectedRequest && selectedRequest.type !== 'problem') console.log('   - Solicitud no es de tipo "problem"');
+    }
+  }, [selectedRequest, isModalOpen, user, currentRoom]);
 
   // Nuevo useEffect para unir al admin a todas las salas cuando se cargan las solicitudes
   useEffect(() => {
@@ -514,14 +743,32 @@ export default function RequestsPage() {
   );
 
   const openModal = (request: Request) => {
+    console.log('🚪 [MODAL] Abriendo modal para solicitud:', request._id);
+    console.log('📋 [MODAL] Datos de la solicitud:', {
+      id: request._id,
+      email: request.email,
+      type: request.type,
+      status: request.status,
+      messagesCount: request.messages?.length || 0
+    });
+    
     setSelectedRequest(request);
     setIsModalOpen(true);
     
-    // Unirse a la sala de chat
-    joinRequestRoom(request._id, user?.role !== 'admin' ? request.email : undefined);
+    // Unirse a la sala de chat con un pequeño delay para asegurar que el estado se actualice
+    setTimeout(() => {
+      joinRequestRoom(request._id, user?.role !== 'admin' ? request.email : undefined);
+    }, 100);
   };
 
   const closeModal = () => {
+    // Limpiar intervalo de recarga automática
+    if (messageRefreshInterval.current) {
+      console.log('🧹 [CHAT REFRESH] Limpiando intervalo al cerrar modal');
+      clearInterval(messageRefreshInterval.current);
+      messageRefreshInterval.current = null;
+    }
+
     // Salir de la sala de chat
     if (currentRoom && socket) {
       socket.emit('leave_request_room', { requestId: currentRoom });
