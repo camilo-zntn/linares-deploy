@@ -19,6 +19,7 @@ export interface IAnalyticsEvent extends Document {
   path?: string;
   durationMs?: number;
   meta?: Record<string, any>;
+  device?: string;
   createdAt: Date;
 }
 
@@ -44,6 +45,7 @@ const AnalyticsEventSchema = new Schema<IAnalyticsEvent>({
   path: { type: String },
   durationMs: { type: Number },
   meta: { type: Schema.Types.Mixed },
+  device: { type: String, default: 'unknown' },
   createdAt: { type: Date, default: Date.now },
 });
 
