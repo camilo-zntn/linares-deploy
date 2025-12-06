@@ -6,6 +6,224 @@ import { AnalyticsEventModel } from '../models/analyticsEvent.model';
 import { UserAnalyticsModel } from '../models/userAnalytics.model';
 import mongoose from 'mongoose';
 
+export const getCategoryAnalytics = async (req: Request, res: Response) => {
+  try {
+    const { category, period } = req.query; // category name or 'all', period '7d', '30d', '90d'
+
+    let dateFilter = {};
+    const now = new Date();
+    if (period === '7d') dateFilter = { createdAt: { $gte: new Date(now.setDate(now.getDate() - 7)) } };
+    else if (period === '30d') dateFilter = { createdAt: { $gte: new Date(now.setDate(now.getDate() - 30)) } };
+    else if (period === '90d') dateFilter = { createdAt: { $gte: new Date(now.setDate(now.getDate() - 90)) } };
+
+    let matchStage: any = { ...dateFilter };
+
+    if (category && category !== 'all') {
+      // Búsqueda insensible a mayúsculas/minúsculas para mayor robustez
+      const catDoc = await CategoryModel.findOne({ name: { $regex: new RegExp(`^${category}$`, 'i') } });
+      if (catDoc) {
+        matchStage.categoryId = catDoc._id;
+      } else {
+        // Si la categoría no existe, forzamos que no coincida nada (o podríamos ignorarlo, pero mejor ser explícitos)
+        // Sin embargo, si el frontend envía una categoría válida, esto no debería pasar.
+        // Si queremos que "si no encuentra, muestre 0", ponemos un ID inexistente.
+        matchStage.categoryId = new mongoose.Types.ObjectId(); 
+      }
+    }
+
+    console.log(`getCategoryAnalytics: category=${category}, period=${period}, matchStage=`, JSON.stringify(matchStage));
+
+    // 1. Visits by Month
+    const visitsByMonth = await AnalyticsEventModel.aggregate([
+      { $match: { ...matchStage, eventType: 'VIEW_START' } },
+      {
+        $group: {
+          _id: {
+            month: { $month: "$createdAt" },
+            year: { $year: "$createdAt" }
+          },
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { "_id.year": 1, "_id.month": 1 } }
+    ]);
+
+    const monthNames = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+    const formattedVisits = visitsByMonth.map(v => ({
+      month: monthNames[v._id.month - 1],
+      visits: v.count
+    }));
+
+    // 2. Device Distribution
+    const deviceDistribution = await AnalyticsEventModel.aggregate([
+      { $match: { ...matchStage, eventType: 'VIEW_START' } },
+      {
+        $group: {
+          _id: "$device",
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    const formattedDevices = deviceDistribution.map(d => ({
+      name: d._id.charAt(0).toUpperCase() + d._id.slice(1),
+      value: d.count
+    }));
+
+    // 3. CTR (Clicks)
+    const clicks = await AnalyticsEventModel.aggregate([
+      { $match: { ...matchStage, eventType: { $in: ['CLICK_SOCIAL', 'CLICK_MAP', 'CLICK_CONTACT'] } } },
+      {
+        $group: {
+          _id: "$eventType",
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    const formattedClicks = clicks.map(c => {
+      let action = '';
+      if (c._id === 'CLICK_SOCIAL') action = 'Social';
+      if (c._id === 'CLICK_MAP') action = 'Mapa';
+      if (c._id === 'CLICK_CONTACT') action = 'Contacto';
+      return {
+        action,
+        ctr: c.count // Using count as CTR for now, or raw clicks
+      };
+    });
+
+    res.json({
+      visitsByMonth: formattedVisits,
+      deviceDistribution: formattedDevices,
+      clicks: formattedClicks
+    });
+
+  } catch (error) {
+    console.error('Error al obtener analítica por categoría:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
+export const getCommerceAnalytics = async (req: Request, res: Response) => {
+  try {
+    const { commerceId, period } = req.query; // commerceId or name, period '7d', '30d', '90d'
+
+    let dateFilter = {};
+    const now = new Date();
+    if (period === '7d') dateFilter = { createdAt: { $gte: new Date(now.setDate(now.getDate() - 7)) } };
+    else if (period === '30d') dateFilter = { createdAt: { $gte: new Date(now.setDate(now.getDate() - 30)) } };
+    else if (period === '90d') dateFilter = { createdAt: { $gte: new Date(now.setDate(now.getDate() - 90)) } };
+
+    let matchStage: any = { ...dateFilter };
+    let foundCommerce = false;
+
+    if (commerceId) {
+      // Try by ID first
+      if (mongoose.Types.ObjectId.isValid(commerceId as string)) {
+        matchStage.commerceId = new mongoose.Types.ObjectId(commerceId as string);
+        foundCommerce = true;
+      } else {
+        // Try by name (regex)
+        const commerce = await CommerceModel.findOne({ name: { $regex: new RegExp(commerceId as string, 'i') } });
+        if (commerce) {
+          matchStage.commerceId = commerce._id;
+          foundCommerce = true;
+        }
+      }
+    }
+
+    if (!foundCommerce && commerceId) {
+      // If a commerce was requested but not found, return empty
+      return res.json({
+        visitsByMonth: [],
+        deviceDistribution: [],
+        clicks: []
+      });
+    }
+
+    // If no commerce requested, what should we do? 
+    // The requirement says "por locales", implying specific selection.
+    // If no selection, maybe return nothing or aggregate all (like category).
+    // Let's assume if no commerceId is provided, we return empty or user must search.
+    if (!commerceId) {
+       return res.json({
+        visitsByMonth: [],
+        deviceDistribution: [],
+        clicks: []
+      });
+    }
+
+    // 1. Visits by Month
+    const visitsByMonth = await AnalyticsEventModel.aggregate([
+      { $match: { ...matchStage, eventType: 'VIEW_START' } },
+      {
+        $group: {
+          _id: {
+            month: { $month: "$createdAt" },
+            year: { $year: "$createdAt" }
+          },
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { "_id.year": 1, "_id.month": 1 } }
+    ]);
+
+    const monthNames = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+    const formattedVisits = visitsByMonth.map(v => ({
+      month: monthNames[v._id.month - 1],
+      visits: v.count
+    }));
+
+    // 2. Device Distribution
+    const deviceDistribution = await AnalyticsEventModel.aggregate([
+      { $match: { ...matchStage, eventType: 'VIEW_START' } },
+      {
+        $group: {
+          _id: "$device",
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    const formattedDevices = deviceDistribution.map(d => ({
+      name: d._id.charAt(0).toUpperCase() + d._id.slice(1),
+      value: d.count
+    }));
+
+    // 3. CTR (Clicks)
+    const clicks = await AnalyticsEventModel.aggregate([
+      { $match: { ...matchStage, eventType: { $in: ['CLICK_SOCIAL', 'CLICK_MAP', 'CLICK_CONTACT'] } } },
+      {
+        $group: {
+          _id: "$eventType",
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    const formattedClicks = clicks.map(c => {
+      let action = '';
+      if (c._id === 'CLICK_SOCIAL') action = 'Social';
+      if (c._id === 'CLICK_MAP') action = 'Mapa';
+      if (c._id === 'CLICK_CONTACT') action = 'Contacto';
+      return {
+        action,
+        ctr: c.count
+      };
+    });
+
+    res.json({
+      visitsByMonth: formattedVisits,
+      deviceDistribution: formattedDevices,
+      clicks: formattedClicks
+    });
+
+  } catch (error) {
+    console.error('Error al obtener analítica por comercio:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
 export const getCommerceByCategory = async (req: Request, res: Response) => {
   try {
     // Primero obtener todas las categorías
@@ -118,10 +336,27 @@ export const postAnalyticsEvent = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'sessionId y eventType son requeridos' });
     }
 
+    // Si tenemos commerceId pero no categoryId, intentamos buscar la categoría del comercio
+    if (commerceId && !categoryId) {
+      const commerce = await CommerceModel.findById(commerceId).select('category');
+      if (commerce?.category) {
+        categoryId = commerce.category;
+      }
+    }
+
     const uid = new mongoose.Types.ObjectId(user.userId);
     const now = new Date();
 
-    const persistEvents = (process.env.ANALYTICS_PERSIST_EVENTS === 'true');
+    // Detectar dispositivo
+    const userAgent = req.headers['user-agent'] || '';
+    let device = 'desktop';
+    if (/mobile/i.test(userAgent)) device = 'mobile';
+    else if (/tablet/i.test(userAgent)) device = 'tablet';
+
+    // Force persist events or check env
+    const persistEvents = true; // Always true based on user request, or use env
+    // const persistEvents = (process.env.ANALYTICS_PERSIST_EVENTS === 'true');
+    
     if (persistEvents) {
       await AnalyticsEventModel.create({
         userId: uid,
@@ -132,6 +367,7 @@ export const postAnalyticsEvent = async (req: Request, res: Response) => {
         path,
         durationMs: incMs,
         meta,
+        device,
         createdAt: now,
       });
     }
@@ -286,6 +522,86 @@ export const getUserAnalytics = async (req: Request, res: Response) => {
     res.json({ commerce, categories, socialClicks, mapClicks, contactClicks });
   } catch (error) {
     console.error('Error al obtener analítica de usuario:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
+export const getTopCommerces = async (req: Request, res: Response) => {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const sortBy = (req.query.sortBy as string) || 'visits'; // 'visits', 'totalTimeMs', 'name'
+    const sortOrder = (req.query.sortOrder as string) === 'asc' ? 1 : -1;
+    const search = (req.query.search as string) || '';
+
+    console.log(`getTopCommerces: page=${page}, limit=${limit}, search=${search}`);
+
+    // 1. Obtener analíticas agrupadas
+    const analytics = await UserAnalyticsModel.aggregate([
+      { $unwind: '$commerce' },
+      {
+        $group: {
+          _id: '$commerce.commerceId',
+          visits: { $sum: '$commerce.visits' },
+          totalTimeMs: { $sum: '$commerce.totalTimeMs' }
+        }
+      }
+    ]);
+
+    console.log(`Analytics found: ${analytics.length}`);
+
+    const analyticsMap = new Map(analytics.map(item => [String(item._id), item]));
+
+    // 2. Construir filtro de búsqueda para comercios
+    const filter: any = {};
+    if (search) {
+      filter.name = { $regex: search, $options: 'i' };
+    }
+
+    // 3. Obtener comercios
+    const commerces = await CommerceModel.find(filter)
+      .select('name category')
+      .populate('category', 'name')
+      .lean();
+
+    console.log(`Commerces found: ${commerces.length}`);
+
+    // 4. Combinar datos
+    let data = commerces.map((commerce: any) => {
+      const stats = analyticsMap.get(String(commerce._id));
+      return {
+        _id: commerce._id,
+        name: commerce.name,
+        category: commerce.category?.name || 'Sin Categoría',
+        visits: stats?.visits || 0,
+        totalTimeMs: stats?.totalTimeMs || 0
+      };
+    });
+
+    // 5. Ordenar
+    data.sort((a: any, b: any) => {
+      if (typeof a[sortBy] === 'string') {
+        return sortOrder * a[sortBy].localeCompare(b[sortBy]);
+      }
+      return sortOrder * (a[sortBy] - b[sortBy]);
+    });
+
+    // 6. Paginar
+    const total = data.length;
+    const totalPages = Math.ceil(total / limit);
+    const paginatedData = data.slice((page - 1) * limit, page * limit);
+
+    console.log(`Returning ${paginatedData.length} items`);
+
+    res.json({
+      data: paginatedData,
+      total,
+      page,
+      pages: totalPages
+    });
+
+  } catch (error) {
+    console.error('Error al obtener top comercios:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
