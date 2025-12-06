@@ -6,7 +6,8 @@ import {
   Users,         // Gestionar usuarios 
   FolderTree,    // Gestionar categorias
   Layout,        // Crear estante
-  LogOut         // Cerrar sesion
+  LogOut,        // Cerrar sesion
+  BarChart2
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
@@ -80,6 +81,14 @@ export default function Dashboard() {
       icon: ClipboardList,
       color: 'from-blue-600 to-blue-400',
       link: '/views/requests',
+      adminOnly: true
+    },
+    {
+      title: 'Resumen General',
+      description: 'Visualización de estadísticas generales',
+      icon: BarChart2,
+      color: 'from-blue-600 to-blue-400',
+      link: '/views/analytics',
       adminOnly: true
     },
     {

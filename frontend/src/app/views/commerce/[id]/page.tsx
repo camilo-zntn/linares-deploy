@@ -5,6 +5,8 @@ import { useParams } from 'next/navigation';
 import Image from 'next/image';
 import { Facebook, Instagram, MessageCircle, Mail, Phone, Globe, MapPin, Clock } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { createAnalyticsView, trackSocialClick, trackContactClick, trackMapClick } from '../../../../lib/analytics';
+import TestTimer from '../../../../components/TestTimer/page';
 
 interface DaySchedule {
   start: string;
@@ -77,6 +79,17 @@ export default function CommerceDetailPage() {
     fetchCommerceDetails();
   }, [params.id]);
 
+  useEffect(() => {
+    if (commerce) {
+      const { init, cleanup } = createAnalyticsView({
+        commerceId: commerce._id,
+        path: `/views/commerce/${commerce._id}`,
+      });
+      init();
+      return () => cleanup();
+    }
+  }, [commerce]);
+
   const isBusinessOpen = (schedule: Schedule): boolean => {
     const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
     const today = days[new Date().getDay()];
@@ -116,6 +129,7 @@ export default function CommerceDetailPage() {
 
   return (
     <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
+      <TestTimer label={`Comercio: ${commerce.name}`} />
       <div className="rounded-lg overflow-hidden">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8">
           {/* Columna Izquierda - Imagen y Detalles Principales */}
@@ -167,6 +181,7 @@ export default function CommerceDetailPage() {
                 <div className="space-y-2 sm:space-y-3">
                   {commerce.contact?.phone && (
                     <a href={`tel:${commerce.contact.phone}`} 
+                       onClick={() => trackContactClick('phone')}
                        className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 bg-white rounded-lg hover:bg-emerald-50 transition-colors">
                       <Phone className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-500 flex-shrink-0" />
                       <span className="text-sm sm:text-base text-gray-700">{commerce.contact.phone}</span>
@@ -174,6 +189,7 @@ export default function CommerceDetailPage() {
                   )}
                   {commerce.contact?.email && (
                     <a href={`mailto:${commerce.contact.email}`} 
+                       onClick={() => trackContactClick('email')}
                        className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 bg-white rounded-lg hover:bg-emerald-50 transition-colors">
                       <Mail className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-500 flex-shrink-0" />
                       <span className="text-sm sm:text-base text-gray-700 break-all">{commerce.contact.email}</span>
@@ -183,6 +199,7 @@ export default function CommerceDetailPage() {
                     <a href={commerce.contact.website} 
                        target="_blank" 
                        rel="noopener noreferrer"
+                       onClick={() => trackContactClick('website')}
                        className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 bg-white rounded-lg hover:bg-emerald-50 transition-colors">
                       <Globe className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-500 flex-shrink-0" />
                       <span className="text-sm sm:text-base text-gray-700">Sitio web</span>
@@ -203,6 +220,7 @@ export default function CommerceDetailPage() {
                     <a href={commerce.contact.socialMedia.facebook}
                        target="_blank"
                        rel="noopener noreferrer"
+                       onClick={() => trackSocialClick('facebook')}
                        className="p-2 sm:p-3 bg-white rounded-lg hover:bg-blue-50 transition-colors"
                        title="Facebook">
                       <Facebook className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
@@ -212,6 +230,7 @@ export default function CommerceDetailPage() {
                     <a href={commerce.contact.socialMedia.instagram}
                        target="_blank"
                        rel="noopener noreferrer"
+                       onClick={() => trackSocialClick('instagram')}
                        className="p-2 sm:p-3 bg-white rounded-lg hover:bg-pink-50 transition-colors"
                        title="Instagram">
                       <Instagram className="h-5 w-5 sm:h-6 sm:w-6 text-pink-600" />
@@ -221,6 +240,7 @@ export default function CommerceDetailPage() {
                     <a href={`https://wa.me/${commerce.contact.socialMedia.whatsapp}`}
                        target="_blank"
                        rel="noopener noreferrer"
+                       onClick={() => trackSocialClick('whatsapp')}
                        className="p-2 sm:p-3 bg-white rounded-lg hover:bg-green-50 transition-colors"
                        title="WhatsApp">
                       <MessageCircle className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
@@ -242,7 +262,8 @@ export default function CommerceDetailPage() {
               {commerce.googleMapsIframe ? (
                 <div 
                   className="w-full h-[250px] sm:h-[300px] lg:h-[400px] rounded-lg overflow-hidden shadow-inner"
-                  dangerouslySetInnerHTML={{ __html: commerce.googleMapsIframe }}
+                  onClick={trackMapClick}
+                  dangerouslySetInnerHTML={{ __html: sanitizeMapIframe(commerce.googleMapsIframe) }}
                 />
               ) : (
                 <div className="flex flex-col items-center justify-center h-[250px] sm:h-[300px] lg:h-[400px] bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
@@ -258,4 +279,11 @@ export default function CommerceDetailPage() {
       </div>
     </div>
   );
+}
+
+function sanitizeMapIframe(html: string) {
+  return html
+    .replace(/<\/?html[^>]*>/gi, '')
+    .replace(/<\/?body[^>]*>/gi, '')
+    .trim();
 }

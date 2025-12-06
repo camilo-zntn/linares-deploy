@@ -24,6 +24,7 @@ import commerceRoutes from './routes/commerce.routes';
 import requestRoutes from './routes/request.routes';
 import referralRoutes from './routes/referral.routes';
 import analyticsRoutes from './routes/analyticsRoutes';
+import discountRoutes from './routes/discounts.routes';
 
 // Importar configuración de WebSocket
 import { setupSocketIO } from './config/socket.config';
@@ -70,6 +71,7 @@ app.use('/api/commerces', commerceRoutes);
 app.use('/api/requests', requestRoutes);
 app.use('/api/referrals', referralRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/discounts', discountRoutes);
 
 // Banner de inicio
 console.log(chalk.cyan.bold(`

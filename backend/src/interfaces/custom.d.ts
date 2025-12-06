@@ -6,5 +6,6 @@ export interface CustomRequest extends Request {
     role: string;
     name?: string;
     email?: string;
+    commerceId?: string;
   };
 }

@@ -1,14 +1,17 @@
 import { Request, Response } from 'express';
+import mongoose from 'mongoose';
 import { LogModel } from '../models/log.model';
+import { CustomRequest } from '../interfaces/custom.d';
 
 export const logController = {
+  // Obtener todos los logs (solo admin)
   getLogs: async (_req: Request, res: Response): Promise<void> => {
     try {
       // Obtener logs con ordenamiento y referencias
       const logs = await LogModel.find()
         .sort({ createdAt: -1 })  // Ordenar por fecha descendente
-        .populate('userId', 'username')  // Incluir informacion del usuario
-        .lean(); 
+        .populate('userId', 'name email role')  // Incluir información del usuario (ajustado: 'name' en lugar de 'username')
+        .lean();
 
       // Respuesta exitosa
       res.status(200).json({
@@ -17,13 +20,67 @@ export const logController = {
         total: logs.length,
         message: logs.length ? 'Logs obtenidos exitosamente' : 'No hay logs registrados'
       });
-
     } catch (error) {
-      // Manejo de errores
       console.error('Error al obtener logs:', error);
       res.status(500).json({
         success: false,
         message: 'Error al obtener logs',
+        error: error instanceof Error ? error.message : 'Error desconocido'
+      });
+    }
+  },
+
+  // Crear un nuevo log (autenticado)
+  createLog: async (req: CustomRequest, res: Response): Promise<void> => {
+    try {
+      const { action, resourceType, resourceId, details, changes } = req.body;
+
+      // Validar autenticación
+      const userId = req.user?.userId;
+      const username = req.user?.name || 'Usuario';
+
+      if (!userId) {
+        res.status(401).json({ success: false, message: 'Usuario no autenticado' });
+        return;
+      }
+
+      // Validar campos mínimos
+      const normalizedAction =
+        action && ['CREATE', 'UPDATE', 'DELETE'].includes(action) ? action : 'UPDATE';
+      const normalizedResourceType = resourceType || 'Commerce';
+
+      if (!resourceId || !mongoose.Types.ObjectId.isValid(resourceId)) {
+        res.status(400).json({ success: false, message: 'resourceId inválido o faltante' });
+        return;
+      }
+
+      const normalizedDetails =
+        typeof details === 'string' && details.trim().length > 0
+          ? details.trim()
+          : changes
+            ? `Cambios: ${JSON.stringify(changes)}`
+            : 'Sin detalles';
+
+      // Crear log
+      const newLog = await LogModel.create({
+        userId,
+        username,
+        action: normalizedAction,
+        resourceType: normalizedResourceType,
+        resourceId,
+        details: normalizedDetails
+      });
+
+      res.status(201).json({
+        success: true,
+        log: newLog,
+        message: 'Log creado exitosamente'
+      });
+    } catch (error) {
+      console.error('Error al crear log:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error al crear log',
         error: error instanceof Error ? error.message : 'Error desconocido'
       });
     }

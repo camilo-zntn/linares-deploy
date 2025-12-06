@@ -12,6 +12,7 @@ declare global {
         role: string;
         name?: string;
         email?: string;
+        commerceId?: string;
       }
     }
   }
@@ -28,7 +29,10 @@ export const authMiddleware = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const token = req.headers.authorization?.split(' ')[1];
+    let token = req.headers.authorization?.split(' ')[1];
+    if (!token && req.query && typeof req.query.token === 'string') {
+      token = req.query.token as string;
+    }
     
     if (!token) {
       res.status(401).json({ message: 'Token no proporcionado' });
@@ -38,7 +42,7 @@ export const authMiddleware = async (
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'defaultSecret') as DecodedToken;
     
     const user = await UserModel.findById(decoded.userId)
-      .select('name email role isVerified')
+      .select('name email role isVerified commerceId')
       .lean();
 
     if (!user) {
@@ -50,7 +54,8 @@ export const authMiddleware = async (
       userId: decoded.userId,
       role: decoded.role,
       name: user.name,
-      email: user.email
+      email: user.email,
+      commerceId: (user as any).commerceId?.toString?.()
     };
 
     next();

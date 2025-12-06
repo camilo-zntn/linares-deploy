@@ -12,7 +12,8 @@ import {
   House,
   LogOut,
   MessageCircleQuestion, 
-  BarChart2
+  BarChart2,
+  Percent
 } from 'lucide-react';
 
 interface UserData {
@@ -77,6 +78,13 @@ export default function Sidebar() {
           adminOnly: true,
           description: 'Gestionar categorias de documentos'
         },
+        {
+          title: 'Resumen General',
+          icon: BarChart2,
+          href: '/views/analytics',
+          adminOnly: true,
+          description: 'Visualización de estadísticas generales'
+        }
       ]
     },
     {
@@ -102,13 +110,6 @@ export default function Sidebar() {
           href: '/views/commerce',
           adminOnly: true,
           description: 'Crear nuevos estantes digitales'
-        },
-        {
-          title: 'Resumen General',
-          icon: BarChart2,
-          href: '/views/analytics',
-          adminOnly: true,
-          description: 'Visualización de estadísticas generales'
         }
       ]
     },
@@ -121,6 +122,13 @@ export default function Sidebar() {
           href: '/views/management',
           commerceOnly: true,
           description: 'Gestionar mi comercio'
+        },
+        {
+          title: 'Crear descuento',
+          icon: Percent,
+          href: '/views/discounts/create',
+          commerceOnly: true,
+          description: 'Crear cupones para usuarios con referidos'
         }
       ]
     },
@@ -144,6 +152,12 @@ export default function Sidebar() {
           icon: FolderHeart,
           href: '/views/profile', // Corregir la ruta
           description: 'Datos personales'
+        },
+        {
+          title: 'Descuentos',
+          icon: Percent,
+          href: '/views/discounts',
+          description: 'Cupones disponibles'
         }
       ]
     },

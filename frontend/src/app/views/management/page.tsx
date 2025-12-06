@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Store, Mail, Phone, Globe, Facebook, Instagram, MessageCircle, MapPin, Building2, FileText, Save, Clock } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { useAuth } from '@/context/AuthContext';
 
 // Interfaces separadas para mejor mantenibilidad
 interface DaySchedule {
@@ -54,6 +55,7 @@ const API_BASE_URL = 'http://localhost:5000';
 const API_ENDPOINTS = {
   MY_COMMERCE: `${API_BASE_URL}/api/commerces/my-commerce`,
   UPDATE_COMMERCE: (id: string) => `${API_BASE_URL}/api/commerces/commerce/${id}`,
+  CREATE_LOG: `${API_BASE_URL}/api/logs`, // Requiere backend con POST /api/logs
 };
 
 // Horario por defecto para evitar errores
@@ -79,8 +81,80 @@ const DEFAULT_CONTACT: Contact = {
   }
 };
 
+const DAY_LABELS: Record<keyof Schedule, string> = {
+  monday: 'Lunes',
+  tuesday: 'Martes',
+  wednesday: 'Miércoles',
+  thursday: 'Jueves',
+  friday: 'Viernes',
+  saturday: 'Sábado',
+  sunday: 'Domingo',
+};
+
+// Helpers de logs
+function safeString(val: unknown) {
+  const v = typeof val === 'string' ? val : '';
+  return v.trim();
+}
+
+function formatSchedule(s: DaySchedule) {
+  const base = `${s.start || '—'}-${s.end || '—'}`;
+  return s.isClosed ? `${base} (Cerrado)` : base;
+}
+
+function getNested<T = any>(obj: any, path: string, fallback: T): T {
+  return path.split('.').reduce((acc, key) => (acc && key in acc ? acc[key] : undefined), obj) ?? fallback;
+}
+
+function addChange(changes: string[], label: string, oldVal: any, newVal: any) {
+  const oldStr = typeof oldVal === 'string' ? oldVal : oldVal ?? '';
+  const newStr = typeof newVal === 'string' ? newVal : newVal ?? '';
+  if (JSON.stringify(oldVal) !== JSON.stringify(newVal)) {
+    changes.push(`- ${label}: "${oldStr}" → "${newStr}"`);
+  }
+}
+
+function buildLogDetails(original: any, updated: any): { changes: string[]; details: string } {
+  const changes: string[] = [];
+
+  // Campos simples
+  addChange(changes, 'Nombre', safeString(original.name), safeString(updated.name));
+  addChange(changes, 'Descripción', safeString(original.description), safeString(updated.description));
+  addChange(changes, 'Email', safeString(getNested(original, 'contact.email', '')), safeString(getNested(updated, 'contact.email', '')));
+  addChange(changes, 'Teléfono', safeString(getNested(original, 'contact.phone', '')), safeString(getNested(updated, 'contact.phone', '')));
+  addChange(changes, 'Sitio web', safeString(getNested(original, 'contact.website', '')), safeString(getNested(updated, 'contact.website', '')));
+  addChange(changes, 'Ubicación (Google Maps Iframe)', safeString(original.googleMapsIframe), safeString(updated.googleMapsIframe));
+  addChange(changes, 'Facebook', safeString(getNested(original, 'contact.socialMedia.facebook', '')), safeString(getNested(updated, 'contact.socialMedia.facebook', '')));
+  addChange(changes, 'Instagram', safeString(getNested(original, 'contact.socialMedia.instagram', '')), safeString(getNested(updated, 'contact.socialMedia.instagram', '')));
+  addChange(changes, 'WhatsApp', safeString(getNested(original, 'contact.socialMedia.whatsapp', '')), safeString(getNested(updated, 'contact.socialMedia.whatsapp', '')));
+
+  // Horarios por día
+  const origSchedule: Schedule = original.schedule || DEFAULT_SCHEDULE;
+  const updSchedule: Schedule = updated.schedule || DEFAULT_SCHEDULE;
+
+  (Object.keys(DAY_LABELS) as (keyof Schedule)[]).forEach((dayKey) => {
+    const o = origSchedule[dayKey] || DEFAULT_SCHEDULE[dayKey];
+    const n = updSchedule[dayKey] || DEFAULT_SCHEDULE[dayKey];
+
+    const formattedOld = formatSchedule(o);
+    const formattedNew = formatSchedule(n);
+
+    if (formattedOld !== formattedNew) {
+      changes.push(`- Horario ${DAY_LABELS[dayKey]}: "${formattedOld}" → "${formattedNew}"`);
+    }
+  });
+
+  const details =
+    changes.length > 0
+      ? `Edición de comercio. Cambios realizados:\n${changes.join('\n')}`
+      : 'Edición de comercio sin cambios detectados en campos relevantes';
+
+  return { changes, details };
+}
+
 export default function ManagementPage() {
   const router = useRouter();
+  const { user, token } = useAuth();
   const [commerce, setCommerce] = useState<Commerce | null>(null);
   const [formData, setFormData] = useState<Partial<Commerce> | null>(null);
   const [loading, setLoading] = useState(true);
@@ -100,15 +174,16 @@ export default function ManagementPage() {
 
   const fetchMyCommerce = async () => {
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
+      const localToken = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      const authToken = token || localToken;
+      if (!authToken) {
         router.push('/views/auth/login');
         return;
       }
 
       const response = await fetch(API_ENDPOINTS.MY_COMMERCE, {
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${authToken}`
         }
       });
 
@@ -188,14 +263,51 @@ export default function ManagementPage() {
     });
   };
 
+  const sendLog = async (payload: {
+    userId: string;
+    username: string;
+    action: 'CREATE' | 'UPDATE' | 'DELETE';
+    resourceType: string;
+    resourceId: string;
+    details: string;
+  }) => {
+    try {
+      const localToken = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      const authToken = token || localToken;
+      if (!authToken) {
+        console.warn('No hay token para enviar log');
+        return;
+      }
+
+      const response = await fetch(API_ENDPOINTS.CREATE_LOG, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        console.warn('No se pudo crear log:', err?.message || response.statusText);
+      } else {
+        console.log('Log creado correctamente');
+      }
+    } catch (error) {
+      console.warn('Error al enviar log:', error);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
 
     try {
       setIsSubmitting(true);
-      const token = localStorage.getItem('token');
-      if (!token || !formData || !commerce?._id) return;
+      const localToken = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+      const authToken = token || localToken;
+      if (!authToken || !formData || !commerce?._id) return;
 
       // Crear el objeto de datos para enviar con validaciones
       const dataToSend = {
@@ -216,10 +328,32 @@ export default function ManagementPage() {
         }
       };
 
+      // Construir objeto original con misma forma para comparar
+      const originalComparable = {
+        name: commerce.name || '',
+        description: commerce.description || '',
+        category: commerce.category?._id || '',
+        schedule: commerce.schedule || DEFAULT_SCHEDULE,
+        googleMapsIframe: commerce.googleMapsIframe || '',
+        contact: {
+          email: commerce.contact?.email || '',
+          phone: commerce.contact?.phone || '',
+          website: commerce.contact?.website || '',
+          socialMedia: {
+            facebook: commerce.contact?.socialMedia?.facebook || '',
+            instagram: commerce.contact?.socialMedia?.instagram || '',
+            whatsapp: commerce.contact?.socialMedia?.whatsapp || ''
+          }
+        }
+      };
+
+      // Detectar cambios para el log
+      const { changes, details } = buildLogDetails(originalComparable, dataToSend);
+
       const response = await fetch(API_ENDPOINTS.UPDATE_COMMERCE(commerce._id), {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${authToken}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(dataToSend)
@@ -231,6 +365,19 @@ export default function ManagementPage() {
       }
       
       toast.success('Comercio actualizado exitosamente');
+
+      // Enviar log a la base de datos si hay cambios
+      if (changes.length > 0 && user?._id) {
+        await sendLog({
+          userId: user._id,
+          username: user.name || 'Usuario',
+          action: 'UPDATE',
+          resourceType: 'Commerce',
+          resourceId: commerce._id,
+          details,
+        });
+      }
+
       await fetchMyCommerce(); // Recargar datos actualizados
     } catch (error) {
       toast.error('Error al actualizar el comercio');
@@ -498,7 +645,7 @@ export default function ManagementPage() {
                 isSubmitting 
                   ? 'bg-gray-400 cursor-not-allowed' 
                   : 'bg-emerald-600 hover:bg-emerald-700'
-              } text-white font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2`}
+              } text-white font-medium transition-all`}
             >
               <Save className="w-5 h-5" />
               {isSubmitting ? 'Guardando...' : 'Guardar Cambios'}
@@ -506,9 +653,7 @@ export default function ManagementPage() {
           </div>
         </form>
       ) : (
-        <div className="text-center py-8">
-          <p className="text-gray-600">No tienes un comercio asignado.</p>
-        </div>
+        <div className="text-center text-gray-600">No se encontraron datos del comercio.</div>
       )}
     </div>
   );

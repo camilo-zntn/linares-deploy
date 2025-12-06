@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { Menu, FileBox, Home, Heart, HelpCircle, Users, Store, Settings, LogIn, LogOut, Lock, ClipboardList, MessageSquare, FolderTree } from 'lucide-react';
+import { Menu, FileBox, Home, Heart, HelpCircle, Users, Store, Settings, LogIn, LogOut, Lock, ClipboardList, MessageSquare, FolderTree, Percent } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 
@@ -113,6 +113,12 @@ const Navbar = () => {
                     disabled: false
                 },
                 {
+                    icon: Percent,
+                    label: 'Descuentos',
+                    path: '/views/discounts',
+                    disabled: false
+                },
+                {
                     icon: Users,
                     label: 'Usuarios',
                     path: '/views/users',
@@ -152,11 +158,25 @@ const Navbar = () => {
                     path: '/views/management',
                     disabled: false
                 },
+                {
+                    icon: Percent,
+                    label: 'Crear descuento',
+                    path: '/views/discounts/create',
+                    disabled: false
+                },
                 ...baseItems
             ];
         }
 
-        return baseItems;
+        return [
+            ...baseItems,
+            {
+                icon: Percent,
+                label: 'Descuentos',
+                path: '/views/discounts',
+                disabled: false
+            }
+        ];
     };
 
     return (

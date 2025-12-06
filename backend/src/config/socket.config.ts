@@ -2,6 +2,8 @@ import { Server, Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import { RequestModel, IMessage } from '../models/request.model';
 import { UserModel } from '../models/user.model';
+import mongoose from 'mongoose';
+import { UserAnalyticsModel } from '../models/userAnalytics.model';
 
 interface AuthenticatedSocket extends Socket {
   userId?: string;
@@ -240,6 +242,130 @@ export const setupSocketIO = (io: Server) => {
     // Desconexión
     socket.on('disconnect', () => {
       console.log(`Usuario desconectado: ${socket.userName || socket.userEmail || 'Anónimo'} (${socket.id})`);
+    });
+
+    // --- Analítica en tiempo real ---
+    type BufKey = string;
+    const buffer: Map<BufKey, { accMs: number; commerceId?: mongoose.Types.ObjectId | null; categoryId?: mongoose.Types.ObjectId | null; lastAt: number }> = new Map();
+    const FLUSH_MS = 3000;
+
+    const makeKey = (sessionId: string, commerceId?: string, categoryId?: string) => {
+      return `${socket.userId || 'anon'}|${sessionId}|${commerceId || '-'}|${categoryId || '-'}`;
+    };
+
+    const flush = async (key: BufKey) => {
+      const entry = buffer.get(key);
+      if (!entry || !socket.userId) return;
+      const incMs = entry.accMs;
+      if (!incMs || incMs <= 0) return;
+      buffer.set(key, { ...entry, accMs: 0, lastAt: Date.now() });
+      const now = new Date();
+      const uid = new mongoose.Types.ObjectId(socket.userId);
+
+      // asegurar documento
+      await UserAnalyticsModel.updateOne(
+        { userId: uid },
+        { $setOnInsert: { userId: uid, mapClicks: 0, socialClicks: {}, contactClicks: {}, commerce: [], categories: [] }, $set: { updatedAt: now } },
+        { upsert: true }
+      );
+
+      // comercio
+      if (entry.commerceId) {
+        const cid = entry.commerceId;
+        const r = await UserAnalyticsModel.updateOne(
+          { userId: uid, 'commerce.commerceId': cid },
+          { $inc: { 'commerce.$.totalTimeMs': incMs }, $set: { 'commerce.$.lastVisit': now } }
+        );
+        if (r.matchedCount === 0) {
+          await UserAnalyticsModel.updateOne(
+            { userId: uid },
+            { $push: { commerce: { commerceId: cid, totalTimeMs: incMs, visits: 0, lastVisit: now } } }
+          );
+        }
+      }
+      // categoría
+      if (entry.categoryId) {
+        const catId = entry.categoryId;
+        const r = await UserAnalyticsModel.updateOne(
+          { userId: uid, 'categories.categoryId': catId },
+          { $inc: { 'categories.$.totalTimeMs': incMs }, $set: { 'categories.$.lastVisit': now } }
+        );
+        if (r.matchedCount === 0) {
+          await UserAnalyticsModel.updateOne(
+            { userId: uid },
+            { $push: { categories: { categoryId: catId, totalTimeMs: incMs, visits: 0, lastVisit: now } } }
+          );
+        }
+      }
+    };
+
+    socket.on('analytics_start', (data: { sessionId: string; commerceId?: string; categoryId?: string }) => {
+      const key = makeKey(data.sessionId, data.commerceId, data.categoryId);
+      buffer.set(key, {
+        accMs: 0,
+        commerceId: data.commerceId ? new mongoose.Types.ObjectId(data.commerceId) : null,
+        categoryId: data.categoryId ? new mongoose.Types.ObjectId(data.categoryId) : null,
+        lastAt: Date.now(),
+      });
+      // contar visita
+      if (socket.userId) {
+        const uid = new mongoose.Types.ObjectId(socket.userId);
+        const now = new Date();
+        if (data.commerceId) {
+          const cid = new mongoose.Types.ObjectId(data.commerceId);
+          UserAnalyticsModel.updateOne(
+            { userId: uid, 'commerce.commerceId': cid },
+            { $inc: { 'commerce.$.visits': 1 }, $set: { 'commerce.$.lastVisit': now } }
+          ).then(r => {
+            if (r.matchedCount === 0) {
+              return UserAnalyticsModel.updateOne(
+                { userId: uid },
+                { $push: { commerce: { commerceId: cid, totalTimeMs: 0, visits: 1, lastVisit: now } } }
+              );
+            }
+          });
+        }
+        if (data.categoryId) {
+          const catId = new mongoose.Types.ObjectId(data.categoryId);
+          UserAnalyticsModel.updateOne(
+            { userId: uid, 'categories.categoryId': catId },
+            { $inc: { 'categories.$.visits': 1 }, $set: { 'categories.$.lastVisit': now } }
+          ).then(r => {
+            if (r.matchedCount === 0) {
+              return UserAnalyticsModel.updateOne(
+                { userId: uid },
+                { $push: { categories: { categoryId: catId, totalTimeMs: 0, visits: 1, lastVisit: now } } }
+              );
+            }
+          });
+        }
+      }
+    });
+
+    socket.on('analytics_progress', async (data: { sessionId: string; deltaMs: number; commerceId?: string; categoryId?: string }) => {
+      const key = makeKey(data.sessionId, data.commerceId, data.categoryId);
+      const entry = buffer.get(key);
+      if (!entry) return;
+      entry.accMs += Number(data.deltaMs) || 0;
+      const elapsed = Date.now() - entry.lastAt;
+      if (elapsed >= FLUSH_MS) {
+        await flush(key);
+      }
+    });
+
+    socket.on('analytics_pause', async (data: { sessionId: string; deltaMs?: number; commerceId?: string; categoryId?: string }) => {
+      const key = makeKey(data.sessionId, data.commerceId, data.categoryId);
+      const entry = buffer.get(key);
+      if (entry && data.deltaMs) entry.accMs += Number(data.deltaMs) || 0;
+      await flush(key);
+    });
+
+    socket.on('analytics_end', async (data: { sessionId: string; deltaMs?: number; commerceId?: string; categoryId?: string }) => {
+      const key = makeKey(data.sessionId, data.commerceId, data.categoryId);
+      const entry = buffer.get(key);
+      if (entry && data.deltaMs) entry.accMs += Number(data.deltaMs) || 0;
+      await flush(key);
+      buffer.delete(key);
     });
   });
 };

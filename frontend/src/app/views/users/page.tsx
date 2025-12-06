@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Pencil, Trash2, Search, Filter, X } from 'lucide-react';
+import { Pencil, Trash2, Search, Filter, X, Copy } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface User {
@@ -323,6 +323,13 @@ const UsersPage = () => {
     setRutError('');
   };
 
+  const copyRut = (user: User) => {
+    const value = `${formatRut(user.rut || '')} | ${user._id}`;
+    navigator.clipboard.writeText(value)
+      .then(() => toast.success('Copiado'))
+      .catch(() => toast.error('No se pudo copiar'));
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -344,7 +351,7 @@ const UsersPage = () => {
   });
 
   return (
-    <div className="p-4 lg:p-6 max-w-7xl mx-auto">
+    <div className="p-4 lg:p-6 max-w-screen-2xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Gestionar Usuarios</h1>
         
@@ -493,6 +500,13 @@ const UsersPage = () => {
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
+                        <button
+                          onClick={() => copyRut(user)}
+                          className="p-1.5 rounded-md border border-gray-300 hover:bg-gray-50 text-gray-600"
+                          title="Copiar"
+                        >
+                          <Copy className="w-4 h-4" />
+                        </button>
                         <span className="text-sm font-medium text-gray-900 truncate">
                           {formatRut(user.rut || '')}
                         </span>
@@ -607,7 +621,7 @@ const UsersPage = () => {
         </div>
         
         {/* Vista desktop - Tabla */}
-        <div className="hidden lg:block overflow-x-auto">
+        <div className="hidden lg:block">
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
@@ -624,8 +638,17 @@ const UsersPage = () => {
               {filteredUsers.map((user) => (
                 <tr key={user._id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">
-                      {formatRut(user.rut || '')}
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => copyRut(user)}
+                        className="p-1.5 rounded-md border border-gray-300 hover:bg-gray-50 text-gray-600"
+                        title="Copiar"
+                      >
+                        <Copy className="w-4 h-4" />
+                      </button>
+                      <div className="text-sm font-medium text-gray-900">
+                        {formatRut(user.rut || '')}
+                      </div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">

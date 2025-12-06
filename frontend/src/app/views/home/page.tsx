@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'react-hot-toast';
 import { Clock, Phone, Mail, Globe, Facebook, Instagram, MessageCircle, Heart, Loader2 } from 'lucide-react';
+import { createAnalyticsView, trackSocialClick, trackContactClick, trackMapClick } from '../../../lib/analytics';
+import TestTimer from '../../../components/TestTimer/page';
 // Importar la configuración de API
 import { apiRoutes } from '../../../config/api';
 
@@ -65,6 +67,13 @@ export default function HomePage() {
   // Nuevos estados para favoritos
   const [favoriteCommerces, setFavoriteCommerces] = useState<string[]>([]);
   const [loadingFavorites, setLoadingFavorites] = useState<{ [key: string]: boolean }>({});
+
+  // Analítica: preparar contexto y ciclo de vida del cronómetro
+  const analyticsCtx = selectedCommerce
+    ? { commerceId: selectedCommerce._id, path: `/views/home/${selectedCommerce._id}` }
+    : selectedCategory
+      ? { categoryId: selectedCategory, path: `/views/home/category/${selectedCategory}` }
+      : { path: '/views/home' };
 
   const fetchCategories = async () => {
     try {
@@ -185,6 +194,12 @@ export default function HomePage() {
     fetchUserFavorites();
   }, []);
 
+  useEffect(() => {
+    const view = createAnalyticsView(analyticsCtx);
+    view.init();
+    return () => view.cleanup();
+  }, [analyticsCtx.categoryId, analyticsCtx.commerceId, analyticsCtx.path]);
+
   const isBusinessOpen = (schedule: Schedule): boolean => {
     const now = new Date();
     const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
@@ -199,6 +214,11 @@ export default function HomePage() {
 
   return (
     <div className="p-6">
+      {!selectedCategory && !selectedCommerce && <TestTimer label="Home" />}
+      {selectedCategory && !selectedCommerce && (
+        <TestTimer label={`Categoría: ${categories.find(c => c._id === selectedCategory)?.name || ''}`} />
+      )}
+      {selectedCommerce && <TestTimer label={`Comercio: ${selectedCommerce.name}`} />}
       {!selectedCategory && (
         <>
           <h1 className="text-2xl font-bold text-gray-800 mb-6">Categorías</h1>
@@ -402,6 +422,7 @@ export default function HomePage() {
                       <div className="space-y-3">
                         {selectedCommerce.contact?.phone && (
                           <a href={`tel:${selectedCommerce.contact.phone}`} 
+                             onClick={() => trackContactClick('phone')}
                              className="flex items-center gap-3 p-3 bg-white rounded-lg hover:bg-emerald-50 transition-colors">
                             <Phone className="h-5 w-5 text-emerald-500" />
                             <span className="text-gray-700">{selectedCommerce.contact.phone}</span>
@@ -409,6 +430,7 @@ export default function HomePage() {
                         )}
                         {selectedCommerce.contact?.email && (
                           <a href={`mailto:${selectedCommerce.contact.email}`} 
+                             onClick={() => trackContactClick('email')}
                              className="flex items-center gap-3 p-3 bg-white rounded-lg hover:bg-emerald-50 transition-colors">
                             <Mail className="h-5 w-5 text-emerald-500" />
                             <span className="text-gray-700">{selectedCommerce.contact.email}</span>
@@ -418,6 +440,7 @@ export default function HomePage() {
                           <a href={selectedCommerce.contact.website} 
                              target="_blank" 
                              rel="noopener noreferrer"
+                             onClick={() => trackContactClick('website')}
                              className="flex items-center gap-3 p-3 bg-white rounded-lg hover:bg-emerald-50 transition-colors">
                             <Globe className="h-5 w-5 text-emerald-500" />
                             <span className="text-gray-700">Sitio web</span>
@@ -438,6 +461,7 @@ export default function HomePage() {
                           <a href={selectedCommerce.contact.socialMedia.facebook}
                              target="_blank"
                              rel="noopener noreferrer"
+                             onClick={() => trackSocialClick('facebook')}
                              className="p-3 bg-white rounded-lg hover:bg-blue-50 transition-colors"
                              title="Facebook">
                             <Facebook className="h-6 w-6 text-blue-600" />
@@ -447,6 +471,7 @@ export default function HomePage() {
                           <a href={selectedCommerce.contact.socialMedia.instagram}
                              target="_blank"
                              rel="noopener noreferrer"
+                             onClick={() => trackSocialClick('instagram')}
                              className="p-3 bg-white rounded-lg hover:bg-pink-50 transition-colors"
                              title="Instagram">
                             <Instagram className="h-6 w-6 text-pink-600" />
@@ -456,6 +481,7 @@ export default function HomePage() {
                           <a href={`https://wa.me/${selectedCommerce.contact.socialMedia.whatsapp}`}
                              target="_blank"
                              rel="noopener noreferrer"
+                             onClick={() => trackSocialClick('whatsapp')}
                              className="p-3 bg-white rounded-lg hover:bg-green-50 transition-colors"
                              title="WhatsApp">
                             <MessageCircle className="h-6 w-6 text-green-600" />
@@ -477,7 +503,8 @@ export default function HomePage() {
                     {selectedCommerce.googleMapsIframe ? (
                       <div 
                         className="w-full h-[400px] rounded-lg overflow-hidden shadow-inner"
-                        dangerouslySetInnerHTML={{ __html: selectedCommerce.googleMapsIframe }}
+                        onClick={trackMapClick}
+                        dangerouslySetInnerHTML={{ __html: sanitizeMapIframe(selectedCommerce.googleMapsIframe) }}
                       />
                     ) : (
                       <div className="flex flex-col items-center justify-center h-[400px] bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
@@ -496,4 +523,11 @@ export default function HomePage() {
       )}
     </div>
   );
+}
+
+function sanitizeMapIframe(html: string) {
+  return html
+    .replace(/<\/?html[^>]*>/gi, '')
+    .replace(/<\/?body[^>]*>/gi, '')
+    .trim();
 }

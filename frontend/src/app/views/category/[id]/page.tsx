@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { toast } from 'react-hot-toast';
+import { useAnalyticsView } from '../../../../lib/analytics';
+import TestTimer from '../../../../components/TestTimer/page';
 
 interface DaySchedule {
   start: string;
@@ -59,6 +61,15 @@ export default function CategoryCommercePage() {
     fetchCategoryCommerces();
   }, [params.id]);
 
+  useEffect(() => {
+    const { init, cleanup } = useAnalyticsView({
+      categoryId: String(params.id),
+      path: `/views/category/${params.id}`,
+    });
+    init();
+    return () => cleanup();
+  }, [params.id]);
+
   const isBusinessOpen = (schedule: Schedule): boolean => {
     const now = new Date();
     const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
@@ -73,6 +84,7 @@ export default function CategoryCommercePage() {
 
   return (
     <div className="p-6">
+      <TestTimer label={`Categoría: ${categoryName || ''}`} />
       <h1 className="text-2xl font-bold text-gray-800 mb-6">{categoryName}</h1>
       
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">

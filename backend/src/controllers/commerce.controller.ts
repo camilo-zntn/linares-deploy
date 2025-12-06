@@ -4,36 +4,87 @@ import { UserModel } from '../models/user.model';
 import path from 'path';
 import sharp from 'sharp';
 import fs from 'fs/promises';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+
+const execAsync = promisify(exec);
 
 const processImage = async (file: Express.Multer.File): Promise<string> => {
   let finalFilename: string;
   
   try {
+    console.log(`Processing file: ${file.originalname}, mimetype: ${file.mimetype}, path: ${file.path}`);
+    
     if (!file.mimetype.includes('webp')) {
       const webpFilename = `${file.filename.split('.')[0]}.webp`;
       const webpPath = path.join(__dirname, '../../uploads', webpFilename);
       const originalPath = file.path;
 
-      // Ensure Sharp has finished processing before attempting to delete
+      console.log(`Converting to WebP: ${originalPath} -> ${webpPath}`);
+
+      // Convertir a WebP
       await sharp(originalPath)
         .webp({ quality: 80 })
         .toFile(webpPath);
 
+      console.log(`WebP conversion completed. Now attempting to delete original: ${originalPath}`);
+
+      // Verificar que el archivo WebP se creó correctamente
       try {
-        // Add a small delay before attempting to delete the file
-        await new Promise(resolve => setTimeout(resolve, 100));
-        await fs.unlink(originalPath);
-      } catch (unlinkError) {
-        console.warn('Warning: Could not delete original file:', unlinkError);
-        // Continue execution even if delete fails
+        await fs.access(webpPath);
+        console.log(`WebP file verified: ${webpPath}`);
+      } catch (error) {
+        throw new Error(`WebP file was not created successfully: ${webpPath}`);
+      }
+
+      // Intentar eliminar el archivo original
+      let deleted = false;
+      
+      // Método 1: fs.unlink con reintentos
+      for (let attempt = 1; attempt <= 3 && !deleted; attempt++) {
+        try {
+          await new Promise(resolve => setTimeout(resolve, 100 * attempt));
+          await fs.unlink(originalPath);
+          console.log(`Successfully deleted original file with fs.unlink (attempt ${attempt}): ${originalPath}`);
+          deleted = true;
+        } catch (unlinkError) {
+          console.warn(`fs.unlink attempt ${attempt} failed:`, unlinkError);
+        }
+      }
+
+      // Método 2: Comando de Windows si fs.unlink falló
+      if (!deleted) {
+        try {
+          const normalizedPath = originalPath.replace(/\//g, '\\');
+          await execAsync(`del /f /q "${normalizedPath}"`);
+          console.log(`Successfully deleted original file with Windows command: ${originalPath}`);
+          deleted = true;
+        } catch (cmdError) {
+          console.error('Windows del command failed:', cmdError);
+        }
+      }
+
+      // Método 3: Verificar si el archivo aún existe
+      if (!deleted) {
+        try {
+          await fs.access(originalPath);
+          console.error(`CRITICAL: Original file still exists after all deletion attempts: ${originalPath}`);
+        } catch (error) {
+          // Si fs.access falla, significa que el archivo no existe (fue eliminado)
+          console.log(`Original file was actually deleted (fs.access failed as expected): ${originalPath}`);
+          deleted = true;
+        }
       }
 
       finalFilename = webpFilename;
     } else {
+      console.log(`File is already WebP, no conversion needed: ${file.filename}`);
       finalFilename = file.filename;
     }
 
-    return `/uploads/${finalFilename}`;
+    const finalUrl = `/uploads/${finalFilename}`;
+    console.log(`Image processing completed. Final URL: ${finalUrl}`);
+    return finalUrl;
   } catch (error) {
     console.error('Error in image processing:', error);
     throw new Error('Failed to process image');
@@ -110,18 +161,16 @@ export const commerceController = {
         // Obtener el comercio actual para encontrar la imagen existente
         const oldCommerce = await CommerceModel.findById(id);
         if (oldCommerce?.imageUrl) {
-          // Obtener la ruta absoluta del archivo
-          const oldImagePath = path.join(__dirname, '../..', oldCommerce.imageUrl);
+          const normalizedOldImageUrl = oldCommerce.imageUrl.startsWith('/')
+            ? oldCommerce.imageUrl.slice(1)
+            : oldCommerce.imageUrl;
+          const oldImagePath = path.join(__dirname, '../..', normalizedOldImageUrl);
           try {
-            // Intentar eliminar el archivo anterior
             await fs.unlink(oldImagePath);
           } catch (unlinkError) {
             console.warn('Warning: Could not delete old image file:', unlinkError);
-            // Continuar con la ejecución incluso si falla la eliminación
           }
         }
-        
-        // Procesar y guardar la nueva imagen
         updateData.imageUrl = await processImage(req.file);
       }
 
@@ -178,7 +227,10 @@ export const commerceController = {
   
       // Delete the image file if it exists
       if (commerce.imageUrl) {
-        const imagePath = path.join(__dirname, '../..', commerce.imageUrl);
+        const normalizedImageUrl = commerce.imageUrl.startsWith('/')
+          ? commerce.imageUrl.slice(1)
+          : commerce.imageUrl;
+        const imagePath = path.join(__dirname, '../..', normalizedImageUrl);
         try {
           await fs.unlink(imagePath);
         } catch (unlinkError) {
