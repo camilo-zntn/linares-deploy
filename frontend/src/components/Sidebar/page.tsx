@@ -1,19 +1,24 @@
 'use client';
 
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { 
-  FolderHeart,
+  Heart,
   Users, 
-  Files, 
-  FolderPlus,
+  FileQuestion, 
+  ShoppingBag,
   MapPinned,
   House,
   LogOut,
   MessageCircleQuestion, 
   BarChart2,
-  Percent
+  Ticket,
+  ClipboardList,
+  Tags,
+  Store,
+  TicketPlus,
+  User
 } from 'lucide-react';
 
 interface UserData {
@@ -37,6 +42,7 @@ interface MenuSection {
 export default function Sidebar() {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [userData, setUserData] = useState<UserData | null>(null);
   
   useEffect(() => {
@@ -52,13 +58,11 @@ export default function Sidebar() {
     localStorage.removeItem('authToken');
     setUserData(null);
     
-    // Forzar recarga completa de la página (equivalente a F5)
     window.location.href = '/views/home';
-    // O alternativamente, si quieres recargar la página actual:
-    // window.location.reload();
   };
 
   const isActive = (href: string) => pathname === href;
+  const analyticsPanel = pathname === '/views/analytics' ? (searchParams?.get('panel') || 'admin') : null;
 
   const menuItems: (MenuItem | MenuSection)[] = [
     {
@@ -66,14 +70,14 @@ export default function Sidebar() {
       items: [
         {
           title: 'Registro de eventos',
-          icon: Users,
+          icon: ClipboardList,
           href: '/views/logs',
           adminOnly: true,
           description: 'Administrar usuarios del sistema'
         },
         {
           title: 'Solicitudes',
-          icon: Files,
+          icon: FileQuestion,
           href: '/views/requests',
           adminOnly: true,
           description: 'Gestionar categorias de documentos'
@@ -99,14 +103,14 @@ export default function Sidebar() {
         },
         {
           title: 'Gestionar Categorias',
-          icon: Files,
+          icon: Tags,
           href: '/views/category',
           adminOnly: true,
           description: 'Gestionar categorias de documentos'
         },
         {
           title: 'Gestionar Comercios',
-          icon: FolderPlus,
+          icon: ShoppingBag,
           href: '/views/commerce',
           adminOnly: true,
           description: 'Crear nuevos estantes digitales'
@@ -118,14 +122,14 @@ export default function Sidebar() {
       items: [
         {
           title: 'Mi Comercio',
-          icon: FolderPlus,
+          icon: Store,
           href: '/views/management',
           commerceOnly: true,
           description: 'Gestionar mi comercio'
         },
         {
           title: 'Crear descuento',
-          icon: Percent,
+          icon: TicketPlus,
           href: '/views/discounts/create',
           commerceOnly: true,
           description: 'Crear cupones para usuarios con referidos'
@@ -143,19 +147,19 @@ export default function Sidebar() {
         },
         {
           title: 'Favoritos',
-          icon: FolderHeart,
-          href: '/views/saved', // Corregir la ruta
+          icon: Heart,
+          href: '/views/saved', 
           description: 'Comercios Guardados'
         },
         {
           title: 'Perfil',
-          icon: FolderHeart,
-          href: '/views/profile', // Corregir la ruta
+          icon: User,
+          href: '/views/profile', 
           description: 'Datos personales'
         },
         {
           title: 'Descuentos',
-          icon: Percent,
+          icon: Ticket,
           href: '/views/discounts',
           description: 'Cupones disponibles'
         }
@@ -166,7 +170,7 @@ export default function Sidebar() {
       items: [
         {
           title: 'Ayuda',
-          icon: MessageCircleQuestion, // Cambiar House por MessageCircleQuestion
+          icon: MessageCircleQuestion,
           href: '/views/help',
           description: 'Sección Principal'
         },
@@ -179,15 +183,12 @@ export default function Sidebar() {
       return {
         ...item,
         items: item.items.filter(subItem => {
-          // Filtrar elementos solo para admin
           if (subItem.adminOnly && userData?.role?.toLowerCase() !== 'admin') {
             return false;
           }
-          // Filtrar elementos solo para commerce
           if (subItem.commerceOnly && userData?.role?.toLowerCase() !== 'commerce') {
             return false;
           }
-          // Ocultar perfil si no hay sesión iniciada
           if (subItem.title === 'Perfil' && !userData) {
             return false;
           }
@@ -201,7 +202,6 @@ export default function Sidebar() {
   return (
     <aside className="fixed left-0 top-0 h-screen w-64 bg-primary border-r border-color shadow-[5px_0_30px_0_rgba(0,0,0,0.1)]">
       <div className="flex flex-col h-full">
-        {/* Header mejorado */}
         <div className="p-6 border-b border-color bg-gradient-to-r from-emerald-500/10 to-transparent">
           <div className="flex flex-col items-center justify-center">
             <div className="flex items-center justify-center mb-4 transform hover:scale-105 transition-transform duration-200">
@@ -215,7 +215,6 @@ export default function Sidebar() {
           </div>
         </div>
 
-        {/* Navigation mejorado */}
         <nav className="flex-1 overflow-y-auto p-4 space-y-4">
           <div>
             {filteredMenuItems.map((section, idx) => (
@@ -254,36 +253,45 @@ export default function Sidebar() {
                       </div>
                     )}
                     {section.items.map((item, itemIdx) => (
-                      <Link
-                        key={itemIdx}
-                        href={item.href}
-                        className={`group flex items-center gap-3 px-4 py-3 text-label rounded-lg 
-                          transition-all duration-300 relative overflow-hidden
-                          hover:translate-x-1
-                          ${isActive(item.href)
-                            ? 'bg-emerald-500/10 text-emerald-600 shadow-sm'
-                            : 'hover:bg-emerald-500/5'}
-                          ${item.title === 'Favoritos' && !userData ? 'opacity-50 cursor-not-allowed' : ''}`}
-                        onClick={(e) => {
-                          if (item.title === 'Favoritos' && !userData) {
-                            e.preventDefault();
-                          }
-                        }}
-                      >
-                        <item.icon className={`w-5 h-5 transition-all duration-300 
-                          group-hover:rotate-6 group-hover:scale-110 ${
-                          isActive(item.href) ? 'text-emerald-600' : ''
-                        }`} />
-                        <span className={`font-medium transition-all duration-300 
-                          group-hover:translate-x-1 ${
-                          isActive(item.href) ? 'text-emerald-600' : ''
-                        }`}>
-                          {item.title}
-                        </span>
-                        {isActive(item.href) && (
-                          <span className="absolute inset-0 bg-emerald-500/5 animate-pulse" />
+                      <div key={itemIdx}>
+                        <Link
+                          href={item.href}
+                          className={`group flex items-center gap-3 px-4 py-3 text-label rounded-lg 
+                            transition-all duration-300 relative overflow-hidden
+                            hover:translate-x-1
+                            ${isActive(item.href)
+                              ? 'bg-emerald-500/10 text-emerald-600 shadow-sm'
+                              : 'hover:bg-emerald-500/5'}
+                            ${((item.title === 'Favoritos' || item.title === 'Descuentos') && !userData) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          onClick={(e) => {
+                            if ((item.title === 'Favoritos' || item.title === 'Descuentos') && !userData) {
+                              e.preventDefault();
+                            }
+                          }}
+                        >
+                          <item.icon className={`w-5 h-5 transition-all duration-300 
+                            group-hover:rotate-6 group-hover:scale-110 ${
+                            isActive(item.href) ? 'text-emerald-600' : ''
+                          }`} />
+                          <span className={`font-medium transition-all duration-300 
+                            group-hover:translate-x-1 ${
+                            isActive(item.href) ? 'text-emerald-600' : ''
+                          }`}>
+                            {item.title}
+                          </span>
+                          {isActive(item.href) && (
+                            <span className="absolute inset-0 bg-emerald-500/5 animate-pulse" />
+                          )}
+                        </Link>
+                        {item.title === 'Resumen General' && userData?.role?.toLowerCase() === 'admin' && isActive(item.href) && (
+                          <div className="mt-2 ml-8 space-y-1">
+                            <Link href={{ pathname: '/views/analytics', query: { panel: 'admin' } }} className={`block px-3 py-1.5 rounded-lg text-sm ${analyticsPanel === 'admin' ? 'bg-emerald-500/10 text-emerald-700' : 'hover:bg-emerald-500/5 text-gray-700'}`}>Admin</Link>
+                            <Link href={{ pathname: '/views/analytics', query: { panel: 'category' } }} className={`block px-3 py-1.5 rounded-lg text-sm ${analyticsPanel === 'category' ? 'bg-emerald-500/10 text-emerald-700' : 'hover:bg-emerald-500/5 text-gray-700'}`}>Categoría</Link>
+                            <Link href={{ pathname: '/views/analytics', query: { panel: 'commerce' } }} className={`block px-3 py-1.5 rounded-lg text-sm ${analyticsPanel === 'commerce' ? 'bg-emerald-500/10 text-emerald-700' : 'hover:bg-emerald-500/5 text-gray-700'}`}>Comercio</Link>
+                            <Link href={{ pathname: '/views/analytics', query: { panel: 'users' } }} className={`block px-3 py-1.5 rounded-lg text-sm ${analyticsPanel === 'users' ? 'bg-emerald-500/10 text-emerald-700' : 'hover:bg-emerald-500/5 text-gray-700'}`}>Usuarios</Link>
+                          </div>
                         )}
-                      </Link>
+                      </div>
                     ))}
                   </>
                 )}
@@ -292,14 +300,12 @@ export default function Sidebar() {
           </div>
         </nav>
 
-        {/* Mensaje condicional de registro */}
         {!userData && (
           <div className="p-4 text-center mb-2 text-sm text-gray-600">
             Regístrate e inicia sesión para obtener beneficios exclusivos
           </div>
         )}
         
-        {/* Botón de logout mejorado */}
         <div className="p-4 border-t border-color mt-auto bg-gradient-to-t from-red-500/5 to-transparent">
           {userData ? (
             <button

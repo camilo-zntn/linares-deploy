@@ -2,12 +2,17 @@
 
 import { useEffect, useState } from 'react';
 import { 
-  ClipboardList, // Registro de eventos
-  Users,         // Gestionar usuarios 
-  FolderTree,    // Gestionar categorias
-  Layout,        // Crear estante
-  LogOut,        // Cerrar sesion
-  BarChart2
+  ClipboardList,
+  Users,
+  Tags,
+  ShoppingBag,
+  LogOut,
+  BarChart2,
+  House,
+  Heart,
+  User,
+  FileQuestion,
+  Ticket
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
@@ -71,15 +76,15 @@ export default function Dashboard() {
       title: 'Registro de Eventos',
       description: 'Registro de acciones realizadas',
       icon: ClipboardList,
-      color: 'from-blue-600 to-blue-400',
+      color: 'from-slate-600 to-slate-400',
       link: '/views/logs',
       adminOnly: true
     },
     {
       title: 'Solicitudes',
       description: 'Solicitudes de soporte',
-      icon: ClipboardList,
-      color: 'from-blue-600 to-blue-400',
+      icon: FileQuestion,
+      color: 'from-orange-500 to-orange-400',
       link: '/views/requests',
       adminOnly: true
     },
@@ -95,47 +100,55 @@ export default function Dashboard() {
       title: 'Usuarios',
       description: 'Gestiona usuarios del sistema',
       icon: Users,
-      color: 'from-purple-600 to-purple-400',
+      color: 'from-indigo-600 to-indigo-400',
       link: '/views/users',
       adminOnly: true
     },
     {
       title: 'Categorias',
       description: 'Gestiona categorias de estantes',
-      icon: FolderTree,
-      color: 'from-indigo-600 to-indigo-400',
+      icon: Tags,
+      color: 'from-pink-600 to-pink-400',
       link: '/views/category',
       adminOnly: true
     },
     {
       title: 'Comercios',
       description: 'Gestiona los estantes digitales',
-      icon: Layout,
-      color: 'from-emerald-600 to-emerald-400',
+      icon: ShoppingBag,
+      color: 'from-cyan-600 to-cyan-400',
       link: '/views/commerce',
       adminOnly: true
     },
     {
       title: 'Inicio',
       description: 'Linares conectado',
-      icon: Layout,
-      color: 'from-emerald-600 to-emerald-400',
+      icon: House,
+      color: 'from-teal-500 to-teal-400',
       link: '/views/home',
       adminOnly: false
     },
     {
       title: 'Favoritos',
       description: 'Comercios favoritos',
-      icon: Layout,
-      color: 'from-emerald-600 to-emerald-400',
+      icon: Heart,
+      color: 'from-rose-500 to-rose-400',
       link: '/views/saved',
+      adminOnly: false
+    },
+    {
+      title: 'Descuentos',
+      description: 'Cupones disponibles',
+      icon: Ticket,
+      color: 'from-amber-500 to-amber-400',
+      link: '/views/discounts',
       adminOnly: false
     },
     {
       title: 'Perfil',
       description: 'Datos personales',
-      icon: Layout,
-      color: 'from-emerald-600 to-emerald-400',
+      icon: User,
+      color: 'from-violet-600 to-violet-400',
       link: '/views/profile',
       adminOnly: false
     },
@@ -224,7 +237,7 @@ export default function Dashboard() {
               )}
   
               <div className="relative group">
-                <div className="absolute -inset-1 bg-gradient-to-r ${card.color} rounded-xl blur opacity-20 group-hover:opacity-30 transition duration-300"></div>
+                <div className={`absolute -inset-1 bg-gradient-to-r ${card.color} rounded-xl blur opacity-20 group-hover:opacity-30 transition duration-300`}></div>
                 <div className={`
                   relative w-16 h-16 rounded-xl bg-gradient-to-br ${card.color}
                   flex items-center justify-center shadow-md
@@ -236,8 +249,7 @@ export default function Dashboard() {
               </div>
   
               <div className="mt-6 space-y-2">
-                <h3 className="text-lg font-semibold text-gray-900 group-hover:text-emerald-600 
-                           transition-colors duration-300">
+                <h3 className={`text-lg font-semibold text-gray-900 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r ${card.color} transition-colors duration-300`}>
                   {card.title}
                 </h3>
                 <p className="text-gray-500 text-sm leading-relaxed">
@@ -246,7 +258,7 @@ export default function Dashboard() {
               </div>
   
               {!card.disabled && (
-                <div className="mt-4 flex items-center text-emerald-600 group-hover:text-emerald-500">
+                <div className={`mt-4 flex items-center group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r ${card.color} text-gray-400`}>
                   <div className="flex items-center opacity-80 group-hover:opacity-100 transition-all duration-300 transform translate-x-0 group-hover:translate-x-2">
                     <span className="text-sm font-medium">
                       {card.action ? 'Ejecutar' : 'Ver mas'}

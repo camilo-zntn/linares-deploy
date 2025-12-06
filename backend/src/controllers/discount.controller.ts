@@ -16,18 +16,21 @@ export const createDiscount = async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'Usuario comercio sin comercio asignado' });
     }
 
-    const { title, description, percent, minReferrals, active } = req.body || {};
-    if (!title || !description || !percent || minReferrals === undefined) {
+    const { title, description, percent, minReferrals, active, targetRut, daysOfWeek } = req.body || {};
+    // description ya no es obligatorio
+    if (!title || !percent || minReferrals === undefined) {
       return res.status(400).json({ message: 'Faltan campos requeridos' });
     }
 
     const doc = await DiscountModel.create({
       commerceId: new mongoose.Types.ObjectId(dbUser.commerceId as any),
       title,
-      description,
+      description: description || '',
       percent: Number(percent),
       minReferrals: Number(minReferrals),
       active: active !== undefined ? Boolean(active) : true,
+      targetRut: targetRut || undefined,
+      daysOfWeek: Array.isArray(daysOfWeek) ? daysOfWeek : []
     });
 
     res.status(201).json({ id: doc._id });
@@ -44,9 +47,21 @@ export const getAvailableDiscounts = async (req: Request, res: Response) => {
 
     let matchStage: any = { active: true };
     if (user.role === 'user') {
-      const dbUser = await UserModel.findById(user.userId).select('referralCount');
+      const dbUser = await UserModel.findById(user.userId).select('referralCount rut');
       if (!dbUser) return res.status(404).json({ message: 'Usuario no encontrado' });
-      matchStage.minReferrals = { $lte: dbUser.referralCount || 0 };
+      
+      // Lógica para filtrar por RUT objetivo o referidos
+      matchStage.$or = [
+        // Caso 1: Descuento general (sin targetRut) y cumple referidos
+        { 
+          targetRut: { $exists: false },
+          minReferrals: { $lte: dbUser.referralCount || 0 }
+        },
+        // Caso 2: Descuento específico para este RUT
+        { 
+          targetRut: dbUser.rut 
+        }
+      ];
     } else if (user.role === 'admin') {
       // Admin ve todos sin restriccion
     } else {
@@ -76,6 +91,7 @@ export const getAvailableDiscounts = async (req: Request, res: Response) => {
           commerceId: '$commerceId',
           commerceName: '$commerceInfo.name',
           imageUrl: '$commerceInfo.imageUrl',
+          daysOfWeek: 1,
           createdAt: 1,
         },
       },
@@ -102,6 +118,64 @@ export const getMyDiscounts = async (req: Request, res: Response) => {
     res.json({ discounts: list });
   } catch (error) {
     console.error('Error obteniendo mis descuentos:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+};
+
+export const updateDiscount = async (req: Request, res: Response) => {
+  try {
+    const { user } = req as any;
+    if (user?.role !== 'commerce') {
+      return res.status(403).json({ message: 'Solo comercios' });
+    }
+    const { id } = req.params as any;
+    const dbUser = await UserModel.findById(user.userId).select('commerceId');
+    if (!dbUser?.commerceId) return res.status(400).json({ message: 'Sin comercio asignado' });
+
+    const discount = await DiscountModel.findById(id).select('commerceId');
+    if (!discount) return res.status(404).json({ message: 'Descuento no encontrado' });
+    if (String(discount.commerceId) !== String(dbUser.commerceId)) {
+      return res.status(403).json({ message: 'No autorizado' });
+    }
+
+    const { title, description, percent, minReferrals, active, daysOfWeek, targetRut } = req.body || {};
+    const update: any = { updatedAt: new Date() };
+    if (title !== undefined) update.title = title;
+    if (description !== undefined) update.description = description;
+    if (percent !== undefined) update.percent = Number(percent);
+    if (minReferrals !== undefined) update.minReferrals = Number(minReferrals);
+    if (active !== undefined) update.active = Boolean(active);
+    if (daysOfWeek !== undefined && Array.isArray(daysOfWeek)) update.daysOfWeek = daysOfWeek;
+    if (targetRut !== undefined) update.targetRut = targetRut;
+
+    await DiscountModel.updateOne({ _id: id }, { $set: update });
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('Error actualizando descuento:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+};
+
+export const deleteDiscount = async (req: Request, res: Response) => {
+  try {
+    const { user } = req as any;
+    if (user?.role !== 'commerce') {
+      return res.status(403).json({ message: 'Solo comercios' });
+    }
+    const { id } = req.params as any;
+    const dbUser = await UserModel.findById(user.userId).select('commerceId');
+    if (!dbUser?.commerceId) return res.status(400).json({ message: 'Sin comercio asignado' });
+
+    const discount = await DiscountModel.findById(id).select('commerceId');
+    if (!discount) return res.status(404).json({ message: 'Descuento no encontrado' });
+    if (String(discount.commerceId) !== String(dbUser.commerceId)) {
+      return res.status(403).json({ message: 'No autorizado' });
+    }
+
+    await DiscountModel.deleteOne({ _id: id });
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('Error eliminando descuento:', error);
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 };

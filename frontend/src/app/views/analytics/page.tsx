@@ -15,6 +15,7 @@ import {
   ResponsiveContainer 
 } from 'recharts';
 import axios from 'axios';
+import { useSearchParams, useRouter } from 'next/navigation';
 
 interface CommerceByCategory {
   category: string;
@@ -52,6 +53,8 @@ interface UserAnalyticsResponse {
 }
 
 export default function Analytics() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const [commerceData, setCommerceData] = useState<CommerceByCategory[]>([]);
   const [userData, setUserData] = useState<UserStats[]>([]);
   const [loading, setLoading] = useState(true);
@@ -143,6 +146,18 @@ export default function Analytics() {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    const p = (searchParams?.get('panel') as any) || 'admin';
+    if (p !== activePanel) setActivePanel(p);
+  }, [searchParams]);
+
+  const setPanel = (p: 'admin' | 'category' | 'commerce' | 'users') => {
+    setActivePanel(p);
+    const url = new URL(window.location.href);
+    url.searchParams.set('panel', p);
+    router.replace(url.pathname + '?' + url.searchParams.toString());
+  };
+
   const formatDuration = (ms: number) => {
     const totalSeconds = Math.floor(ms / 1000);
     const h = Math.floor(totalSeconds / 3600);
@@ -220,12 +235,12 @@ export default function Analytics() {
 
   return (
     <div className="p-6 space-y-8">
-      {/* Pestañas de panel */}
-    <div className="flex w-full justify-center">
+      {/* Selector de panel (solo móvil) */}
+    <div className="flex w-full justify-center lg:hidden">
       <div className="inline-flex items-center gap-1 rounded-2xl border border-neutral-200 bg-neutral-50/80 p-1.5 shadow-sm backdrop-blur dark:border-neutral-700 dark:bg-neutral-900/70">
         <button
           type="button"
-          onClick={() => setActivePanel('admin')}
+          onClick={() => setPanel('admin')}
           aria-pressed={activePanel === 'admin'}
           className={`px-4 sm:px-5 py-2 text-sm font-medium rounded-xl transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 ${
             activePanel === 'admin'
@@ -237,7 +252,7 @@ export default function Analytics() {
         </button>
         <button
           type="button"
-          onClick={() => setActivePanel('category')}
+          onClick={() => setPanel('category')}
           aria-pressed={activePanel === 'category'}
           className={`px-4 sm:px-5 py-2 text-sm font-medium rounded-xl transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 ${
             activePanel === 'category'
@@ -249,7 +264,7 @@ export default function Analytics() {
         </button>
         <button
           type="button"
-          onClick={() => setActivePanel('commerce')}
+          onClick={() => setPanel('commerce')}
           aria-pressed={activePanel === 'commerce'}
           className={`px-4 sm:px-5 py-2 text-sm font-medium rounded-xl transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 ${
             activePanel === 'commerce'
@@ -261,7 +276,7 @@ export default function Analytics() {
         </button>
         <button
           type="button"
-          onClick={() => setActivePanel('users')}
+          onClick={() => setPanel('users')}
           aria-pressed={activePanel === 'users'}
           className={`px-4 sm:px-5 py-2 text-sm font-medium rounded-xl transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 ${
             activePanel === 'users'

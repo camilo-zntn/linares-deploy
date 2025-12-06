@@ -62,6 +62,13 @@ const Navbar = () => {
                     disabledIcon: Lock
                 },
                 {
+                    icon: Percent,
+                    label: 'Descuentos',
+                    path: '/views/discounts',
+                    disabled: true,
+                    disabledIcon: Lock
+                },
+                {
                     icon: HelpCircle,
                     label: 'Ayuda',
                     path: '/views/help',
@@ -162,6 +169,12 @@ const Navbar = () => {
                     icon: Percent,
                     label: 'Crear descuento',
                     path: '/views/discounts/create',
+                    disabled: false
+                },
+                {
+                    icon: Percent,
+                    label: 'Descuentos',
+                    path: '/views/discounts',
                     disabled: false
                 },
                 ...baseItems
