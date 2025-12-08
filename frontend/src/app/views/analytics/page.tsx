@@ -398,7 +398,7 @@ export default function Analytics() {
   }
 
   return (
-    <div className="md:p-6 space-y-6 md:space-y-8">
+    <div className="space-y-6 md:space-y-8">
       {/* Pestañas de panel */}
     <div className="flex w-full justify-start md:justify-center overflow-x-auto pb-2">
       <div className="inline-flex items-center gap-1 rounded-2xl border border-neutral-200 bg-neutral-50/80 p-1.5 shadow-sm backdrop-blur dark:border-neutral-700 dark:bg-neutral-900/70 min-w-max">
@@ -463,19 +463,19 @@ export default function Analytics() {
 
           {/* KPIs principales */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-            <div className="bg-white p-4 md:p-6 rounded-xl shadow-lg">
+            <div className="bg-white p-4 md:p-6 rounded-xl shadow-lg overflow-hidden min-w-0">
               <h3 className="text-lg font-semibold text-gray-700 mb-2">Total Comercios</h3>
               <p className="text-4xl font-bold text-emerald-500">{totals.totalCommerces}</p>
             </div>
-            <div className="bg-white p-4 md:p-6 rounded-xl shadow-lg">
+            <div className="bg-white p-4 md:p-6 rounded-xl shadow-lg overflow-hidden min-w-0">
               <h3 className="text-lg font-semibold text-gray-700 mb-2">Total Usuarios</h3>
               <p className="text-4xl font-bold text-blue-500">{totals.totalUsers}</p>
             </div>
-            <div className="bg-white p-4 md:p-6 rounded-xl shadow-lg">
+            <div className="bg-white p-4 md:p-6 rounded-xl shadow-lg overflow-hidden min-w-0">
               <h3 className="text-lg font-semibold text-gray-700 mb-2">Usuarios Activos</h3>
               <p className="text-4xl font-bold text-emerald-500">{totals.activeUsers}</p>
             </div>
-            <div className="bg-white p-4 md:p-6 rounded-xl shadow-lg">
+            <div className="bg-white p-4 md:p-6 rounded-xl shadow-lg overflow-hidden min-w-0">
               <h3 className="text-lg font-semibold text-gray-700 mb-2">Usuarios Inactivos</h3>
               <p className="text-4xl font-bold text-red-500">{totals.inactiveUsers}</p>
             </div>
@@ -483,22 +483,22 @@ export default function Analytics() {
 
           {/* Actividad general (demo) */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6">
-            <div className="bg-white p-4 md:p-6 rounded-xl shadow-lg">
+            <div className="bg-white p-4 md:p-6 rounded-xl shadow-lg overflow-hidden min-w-0">
               <h3 className="text-sm font-medium text-gray-700 mb-1">Crecimiento 7 días</h3>
               <p className="text-2xl font-bold text-gray-900">+8%</p>
               <p className="text-xs text-gray-500">Demo</p>
             </div>
-            <div className="bg-white p-4 md:p-6 rounded-xl shadow-lg">
+            <div className="bg-white p-4 md:p-6 rounded-xl shadow-lg overflow-hidden min-w-0">
               <h3 className="text-sm font-medium text-gray-700 mb-1">Crecimiento 30 días</h3>
               <p className="text-2xl font-bold text-gray-900">+21%</p>
               <p className="text-xs text-gray-500">Demo</p>
             </div>
-            <div className="bg-white p-4 md:p-6 rounded-xl shadow-lg">
+            <div className="bg-white p-4 md:p-6 rounded-xl shadow-lg overflow-hidden min-w-0">
               <h3 className="text-sm font-medium text-gray-700 mb-1">Nuevos comercios (mes)</h3>
               <p className="text-2xl font-bold text-gray-900">34</p>
               <p className="text-xs text-gray-500">Demo</p>
             </div>
-            <div className="bg-white p-4 md:p-6 rounded-xl shadow-lg">
+            <div className="bg-white p-4 md:p-6 rounded-xl shadow-lg overflow-hidden min-w-0">
               <h3 className="text-sm font-medium text-gray-700 mb-1">Fichas incompletas</h3>
               <p className="text-2xl font-bold text-gray-900">12%</p>
               <p className="text-xs text-gray-500">Demo</p>
@@ -506,44 +506,58 @@ export default function Analytics() {
           </div>
 
           {/* Gráfico: Comercios por Categoría (existente) */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8">
-            <div className="bg-white p-4 md:p-6 rounded-xl shadow-lg">
-              <h2 className="text-xl font-semibold mb-6 text-gray-700">Comercios por Categoría</h2>
-              <div className="h-[400px]">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8 mt-6">
+            <div className="bg-white p-3 md:p-6 rounded-xl shadow-lg min-w-0">
+              <h2 className="text-lg md:text-xl font-semibold mb-4 md:mb-6 text-gray-700">Comercios por Categoría</h2>
+              <div className="h-[250px] md:h-[320px] flex items-center justify-center w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={commerceData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                    <XAxis dataKey="category" tick={{ fill: '#4B5563' }} axisLine={{ stroke: '#9CA3AF' }} />
-                    <YAxis tick={{ fill: '#4B5563' }} axisLine={{ stroke: '#9CA3AF' }} />
+                  <BarChart data={commerceData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false} />
+                    <XAxis 
+                      dataKey="category" 
+                      tick={{ fill: '#4B5563', fontSize: 11 }} 
+                      axisLine={{ stroke: '#9CA3AF' }}
+                      tickLine={false}
+                      interval={0}
+                    />
+                    <YAxis 
+                      tick={{ fill: '#4B5563', fontSize: 11 }} 
+                      axisLine={false}
+                      tickLine={false}
+                    />
                     <Tooltip 
                       contentStyle={{ 
                         backgroundColor: '#FFFFFF', 
                         border: '1px solid #E5E7EB', 
                         borderRadius: '0.5rem', 
-                        padding: '0.5rem' 
+                        padding: '0.5rem',
+                        fontSize: '12px'
                       }} 
                     />
-                    <Legend />
-                    <Bar dataKey="count" fill="#10B981" name="Cantidad" radius={[4, 4, 0, 0]} />
+                    <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
+                    <Bar dataKey="count" fill="#10B981" name="Cantidad" radius={[4, 4, 0, 0]} barSize={32} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
             </div>
 
             {/* Gráfico: Estados de Usuarios por Rol (existente) */}
-            <div className="bg-white p-4 md:p-6 rounded-xl shadow-lg">
-              <h2 className="text-xl font-semibold mb-6 text-gray-700">Estados de Usuarios por Rol</h2>
-              <div className="h-[400px]">
+            <div className="bg-white p-3 md:p-6 rounded-xl shadow-lg min-w-0">
+              <h2 className="text-lg md:text-xl font-semibold mb-4 md:mb-6 text-gray-700">Estados de Usuarios por Rol</h2>
+              <div className="h-[250px] md:h-[320px] flex items-center justify-center w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
+                  <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
                     <Pie
                       data={prepareUserDataForPieChart()}
                       dataKey="value"
                       nameKey="name"
                       cx="50%"
                       cy="50%"
-                      outerRadius={150}
+                      outerRadius="70%"
+                      innerRadius="40%"
+                      paddingAngle={2}
                       label={({ name, value }) => `${name}: ${value}`}
+                      labelLine={false}
                     >
                       {prepareUserDataForPieChart().map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -554,18 +568,18 @@ export default function Analytics() {
                         backgroundColor: '#FFFFFF',
                         border: '1px solid #E5E7EB',
                         borderRadius: '0.5rem',
-                        padding: '0.5rem'
+                        padding: '0.5rem',
+                        fontSize: '12px'
                       }}
                       formatter={(value: any, name: any, props: any) => {
                         const data = props.payload;
                         return [
-                          `Total: ${value}
-                          Activos: ${data.active}
-                          Inactivos: ${data.inactive}`,
+                          `Total: ${value}`,
                           name
                         ];
                       }}
                     />
+                    <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
@@ -574,19 +588,19 @@ export default function Analytics() {
 
           {/* Operativo / Sistema (demo) */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-            <div className="bg-white p-4 md:p-6 rounded-xl shadow-lg">
+            <div className="bg-white p-4 md:p-6 rounded-xl shadow-lg overflow-hidden min-w-0">
               <h3 className="text-sm font-semibold text-gray-700">Web Vitals (LCP)</h3>
               <div className="mt-2 h-3 bg-gray-100 rounded">
                 <div className="h-3 bg-emerald-500 rounded" style={{ width: '72%' }} />
               </div>
               <p className="text-xs text-gray-500 mt-2">Demo: 2.1s</p>
             </div>
-            <div className="bg-white p-4 md:p-6 rounded-xl shadow-lg">
+            <div className="bg-white p-4 md:p-6 rounded-xl shadow-lg overflow-hidden min-w-0">
               <h3 className="text-sm font-semibold text-gray-700">Errores por dispositivo</h3>
               <p className="text-2xl font-bold text-gray-900 mt-2">Bajo</p>
               <p className="text-xs text-gray-500">Demo</p>
             </div>
-            <div className="bg-white p-4 md:p-6 rounded-xl shadow-lg">
+            <div className="bg-white p-4 md:p-6 rounded-xl shadow-lg overflow-hidden min-w-0">
               <h3 className="text-sm font-semibold text-gray-700">Alertas</h3>
               <p className="text-2xl font-bold text-gray-900 mt-2">Sin alertas</p>
               <p className="text-xs text-gray-500">Demo</p>
@@ -594,7 +608,7 @@ export default function Analytics() {
           </div>
 
           {/* Top Comercios Real Data */}
-          <div className="bg-white p-4 md:p-6 rounded-xl shadow-lg">
+          <div className="bg-white p-4 md:p-6 rounded-xl shadow-lg overflow-hidden min-w-0">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
               <h2 className="text-xl font-semibold text-gray-700">Top Comercios</h2>
               <div className="relative w-full md:w-64">
@@ -609,7 +623,8 @@ export default function Analytics() {
               </div>
             </div>
 
-            <div className="overflow-x-auto">
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-sm min-w-[600px]">
                 <thead>
                   <tr className="text-left text-gray-500 border-b">
@@ -670,6 +685,42 @@ export default function Analytics() {
                   )}
                 </tbody>
               </table>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="md:hidden space-y-4">
+              {topCommercesLoading ? (
+                <div className="flex justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-emerald-500"></div>
+                </div>
+              ) : topCommerces.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  No se encontraron comercios
+                </div>
+              ) : (
+                topCommerces.map((commerce) => (
+                  <div key={commerce._id} className="bg-gray-50 p-4 rounded-lg border border-gray-100 shadow-sm">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <h4 className="font-bold text-gray-900 text-base">{commerce.name}</h4>
+                        <span className="inline-block bg-white text-gray-600 text-xs px-2 py-0.5 rounded border mt-1">
+                          {commerce.category}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 mt-3 pt-3 border-t border-gray-200">
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase font-semibold">Visitas</p>
+                        <p className="text-gray-800 font-medium">{commerce.visits}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs text-gray-500 uppercase font-semibold">Tiempo</p>
+                        <p className="text-gray-800 font-medium">{formatDuration(commerce.totalTimeMs)}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
 
             {/* Pagination */}
