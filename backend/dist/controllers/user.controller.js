@@ -1,8 +1,12 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.checkRutAvailability = exports.checkIfFavorite = exports.getFavoriteCommerces = exports.removeFromFavorites = exports.addToFavorites = exports.updateUserProfile = exports.updateUser = exports.assignCommerceToUser = exports.deleteUser = exports.updateUserRole = exports.updateUserStatus = exports.getAllUsers = void 0;
+exports.changePassword = exports.checkRutAvailability = exports.checkIfFavorite = exports.getFavoriteCommerces = exports.removeFromFavorites = exports.addToFavorites = exports.updateUserProfile = exports.updateUser = exports.assignCommerceToUser = exports.deleteUser = exports.updateUserRole = exports.updateUserStatus = exports.getAllUsers = void 0;
 const user_model_1 = require("../models/user.model");
 const rutValidator_1 = require("../utils/rutValidator");
+const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const getAllUsers = async (req, res) => {
     try {
         // Obtener usuarios ordenados por fecha de creacion
@@ -475,3 +479,32 @@ const checkRutAvailability = async (req, res) => {
     }
 };
 exports.checkRutAvailability = checkRutAvailability;
+const changePassword = async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        const { currentPassword, newPassword } = req.body;
+        if (!currentPassword || !newPassword) {
+            return res.status(400).json({ message: 'Contraseña actual y nueva son requeridas' });
+        }
+        const user = await user_model_1.UserModel.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: 'Usuario no encontrado' });
+        }
+        const isMatch = await bcryptjs_1.default.compare(currentPassword, user.password);
+        if (!isMatch) {
+            return res.status(400).json({ message: 'Contraseña actual incorrecta' });
+        }
+        if (typeof newPassword !== 'string' || newPassword.length < 8) {
+            return res.status(400).json({ message: 'La nueva contraseña debe tener al menos 8 caracteres' });
+        }
+        const hashed = await bcryptjs_1.default.hash(newPassword, 10);
+        user.password = hashed;
+        await user.save();
+        res.json({ message: 'Contraseña cambiada correctamente' });
+    }
+    catch (error) {
+        console.error('Error al cambiar contraseña:', error);
+        res.status(500).json({ message: 'Error al cambiar la contraseña' });
+    }
+};
+exports.changePassword = changePassword;

@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { UserModel } from '../models/user.model';
 import { validateRut } from '../utils/rutValidator';
+import bcrypt from 'bcryptjs';
 
 export const getAllUsers = async (req: Request, res: Response) => {
   try {
@@ -538,5 +539,39 @@ export const checkRutAvailability = async (req: Request, res: Response) => {
       message: 'Error al verificar RUT',
       available: false
     });
+  }
+};
+
+export const changePassword = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user.userId;
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: 'Contraseña actual y nueva son requeridas' });
+    }
+
+    const user = await UserModel.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Contraseña actual incorrecta' });
+    }
+
+    if (typeof newPassword !== 'string' || newPassword.length < 8) {
+      return res.status(400).json({ message: 'La nueva contraseña debe tener al menos 8 caracteres' });
+    }
+
+    const hashed = await bcrypt.hash(newPassword, 10);
+    user.password = hashed;
+    await user.save();
+
+    res.json({ message: 'Contraseña cambiada correctamente' });
+  } catch (error) {
+    console.error('Error al cambiar contraseña:', error);
+    res.status(500).json({ message: 'Error al cambiar la contraseña' });
   }
 };

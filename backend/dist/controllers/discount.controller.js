@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getMyDiscounts = exports.getAvailableDiscounts = exports.createDiscount = void 0;
+exports.deleteDiscount = exports.updateDiscount = exports.getMyDiscounts = exports.getAvailableDiscounts = exports.createDiscount = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const discount_model_1 = require("../models/discount.model");
 const user_model_1 = require("../models/user.model");
@@ -17,17 +17,20 @@ const createDiscount = async (req, res) => {
         if (!(dbUser === null || dbUser === void 0 ? void 0 : dbUser.commerceId)) {
             return res.status(400).json({ message: 'Usuario comercio sin comercio asignado' });
         }
-        const { title, description, percent, minReferrals, active } = req.body || {};
-        if (!title || !description || !percent || minReferrals === undefined) {
+        const { title, description, percent, minReferrals, active, targetRut, daysOfWeek } = req.body || {};
+        // description ya no es obligatorio
+        if (!title || !percent || minReferrals === undefined) {
             return res.status(400).json({ message: 'Faltan campos requeridos' });
         }
         const doc = await discount_model_1.DiscountModel.create({
             commerceId: new mongoose_1.default.Types.ObjectId(dbUser.commerceId),
             title,
-            description,
+            description: description || '',
             percent: Number(percent),
             minReferrals: Number(minReferrals),
             active: active !== undefined ? Boolean(active) : true,
+            targetRut: targetRut || undefined,
+            daysOfWeek: Array.isArray(daysOfWeek) ? daysOfWeek : []
         });
         res.status(201).json({ id: doc._id });
     }
@@ -44,10 +47,21 @@ const getAvailableDiscounts = async (req, res) => {
             return res.status(401).json({ message: 'No autenticado' });
         let matchStage = { active: true };
         if (user.role === 'user') {
-            const dbUser = await user_model_1.UserModel.findById(user.userId).select('referralCount');
+            const dbUser = await user_model_1.UserModel.findById(user.userId).select('referralCount rut');
             if (!dbUser)
                 return res.status(404).json({ message: 'Usuario no encontrado' });
-            matchStage.minReferrals = { $lte: dbUser.referralCount || 0 };
+            // Lógica para filtrar por RUT objetivo o referidos
+            matchStage.$or = [
+                // Caso 1: Descuento general (sin targetRut) y cumple referidos
+                {
+                    targetRut: { $exists: false },
+                    minReferrals: { $lte: dbUser.referralCount || 0 }
+                },
+                // Caso 2: Descuento específico para este RUT
+                {
+                    targetRut: dbUser.rut
+                }
+            ];
         }
         else if (user.role === 'admin') {
             // Admin ve todos sin restriccion
@@ -78,6 +92,7 @@ const getAvailableDiscounts = async (req, res) => {
                     commerceId: '$commerceId',
                     commerceName: '$commerceInfo.name',
                     imageUrl: '$commerceInfo.imageUrl',
+                    daysOfWeek: 1,
                     createdAt: 1,
                 },
             },
@@ -109,3 +124,69 @@ const getMyDiscounts = async (req, res) => {
     }
 };
 exports.getMyDiscounts = getMyDiscounts;
+const updateDiscount = async (req, res) => {
+    try {
+        const { user } = req;
+        if ((user === null || user === void 0 ? void 0 : user.role) !== 'commerce') {
+            return res.status(403).json({ message: 'Solo comercios' });
+        }
+        const { id } = req.params;
+        const dbUser = await user_model_1.UserModel.findById(user.userId).select('commerceId');
+        if (!(dbUser === null || dbUser === void 0 ? void 0 : dbUser.commerceId))
+            return res.status(400).json({ message: 'Sin comercio asignado' });
+        const discount = await discount_model_1.DiscountModel.findById(id).select('commerceId');
+        if (!discount)
+            return res.status(404).json({ message: 'Descuento no encontrado' });
+        if (String(discount.commerceId) !== String(dbUser.commerceId)) {
+            return res.status(403).json({ message: 'No autorizado' });
+        }
+        const { title, description, percent, minReferrals, active, daysOfWeek, targetRut } = req.body || {};
+        const update = { updatedAt: new Date() };
+        if (title !== undefined)
+            update.title = title;
+        if (description !== undefined)
+            update.description = description;
+        if (percent !== undefined)
+            update.percent = Number(percent);
+        if (minReferrals !== undefined)
+            update.minReferrals = Number(minReferrals);
+        if (active !== undefined)
+            update.active = Boolean(active);
+        if (daysOfWeek !== undefined && Array.isArray(daysOfWeek))
+            update.daysOfWeek = daysOfWeek;
+        if (targetRut !== undefined)
+            update.targetRut = targetRut;
+        await discount_model_1.DiscountModel.updateOne({ _id: id }, { $set: update });
+        res.json({ ok: true });
+    }
+    catch (error) {
+        console.error('Error actualizando descuento:', error);
+        res.status(500).json({ message: 'Error interno del servidor' });
+    }
+};
+exports.updateDiscount = updateDiscount;
+const deleteDiscount = async (req, res) => {
+    try {
+        const { user } = req;
+        if ((user === null || user === void 0 ? void 0 : user.role) !== 'commerce') {
+            return res.status(403).json({ message: 'Solo comercios' });
+        }
+        const { id } = req.params;
+        const dbUser = await user_model_1.UserModel.findById(user.userId).select('commerceId');
+        if (!(dbUser === null || dbUser === void 0 ? void 0 : dbUser.commerceId))
+            return res.status(400).json({ message: 'Sin comercio asignado' });
+        const discount = await discount_model_1.DiscountModel.findById(id).select('commerceId');
+        if (!discount)
+            return res.status(404).json({ message: 'Descuento no encontrado' });
+        if (String(discount.commerceId) !== String(dbUser.commerceId)) {
+            return res.status(403).json({ message: 'No autorizado' });
+        }
+        await discount_model_1.DiscountModel.deleteOne({ _id: id });
+        res.json({ ok: true });
+    }
+    catch (error) {
+        console.error('Error eliminando descuento:', error);
+        res.status(500).json({ message: 'Error interno del servidor' });
+    }
+};
+exports.deleteDiscount = deleteDiscount;

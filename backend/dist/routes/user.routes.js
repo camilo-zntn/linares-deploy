@@ -10,6 +10,8 @@ router.get('/all', auth_middleware_1.authMiddleware, auth_middleware_1.isAdmin, 
 router.get('/check-rut/:rut', auth_middleware_1.authMiddleware, user_controller_1.checkRutAvailability);
 // Actualizar perfil del usuario autenticado
 router.put('/profile', auth_middleware_1.authMiddleware, user_controller_1.updateUserProfile);
+// Cambiar contraseña del usuario autenticado
+router.put('/change-password', auth_middleware_1.authMiddleware, user_controller_1.changePassword);
 // Actualizar el estado de un usuario
 router.put('/:userId/status', auth_middleware_1.authMiddleware, auth_middleware_1.isAdmin, user_controller_1.updateUserStatus);
 // Eliminar un usuario del sistema

@@ -38,10 +38,16 @@ const mongoose_1 = __importStar(require("mongoose"));
 const DiscountSchema = new mongoose_1.Schema({
     commerceId: { type: mongoose_1.Schema.Types.ObjectId, ref: 'Commerce', required: true, index: true },
     title: { type: String, required: true },
-    description: { type: String, required: true },
+    description: { type: String, required: false },
     percent: { type: Number, required: true, min: 1, max: 100 },
     minReferrals: { type: Number, required: true, min: 0 },
     active: { type: Boolean, default: true },
+    daysOfWeek: {
+        type: [String],
+        default: []
+    },
+    targetRut: { type: String, required: false },
     createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date, default: Date.now },
 });
 exports.DiscountModel = mongoose_1.default.model('Discount', DiscountSchema);

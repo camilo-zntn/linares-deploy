@@ -7,4 +7,6 @@ const router = (0, express_1.Router)();
 router.post('/', auth_middleware_1.authMiddleware, auth_middleware_1.isCommerce, discount_controller_1.createDiscount);
 router.get('/available', auth_middleware_1.authMiddleware, discount_controller_1.getAvailableDiscounts);
 router.get('/my', auth_middleware_1.authMiddleware, auth_middleware_1.isCommerce, discount_controller_1.getMyDiscounts);
+router.put('/:id', auth_middleware_1.authMiddleware, auth_middleware_1.isCommerce, discount_controller_1.updateDiscount);
+router.delete('/:id', auth_middleware_1.authMiddleware, auth_middleware_1.isCommerce, discount_controller_1.deleteDiscount);
 exports.default = router;
