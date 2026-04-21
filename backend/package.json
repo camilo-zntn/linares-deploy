@@ -6,12 +6,10 @@
     "node": ">=16.0.0"
   },
   "scripts": {
-    "clean": "powershell -Command \"Remove-Item -Path ./dist -Recurse -Force -ErrorAction SilentlyContinue; Get-ChildItem -Path ./src -Recurse -Include *.js,*.js.map | Remove-Item -Force\"",
     "dev": "nodemon src/index.ts",
+    "build": "tsc",
     "start": "node dist/index.js",
-    "build": "npm run clean && tsc && npm run copy-deps",
-    "copy-deps": "powershell -Command \"Copy-Item package.json dist/ -Force\"",
-    "test": "jest",
+    "clean": "powershell -Command \"Remove-Item -Path ./dist -Recurse -Force -ErrorAction SilentlyContinue\"",
     "lint": "eslint . --ext .ts"
   },
   "keywords": [],

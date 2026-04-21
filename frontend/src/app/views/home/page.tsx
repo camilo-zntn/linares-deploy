@@ -227,37 +227,34 @@ export default function HomePage() {
               <div 
                 key={category._id}
                 onClick={() => fetchCommercesByCategory(category._id)}
-                className="group relative cursor-pointer"
+                className="group cursor-pointer"
               >
-                <div 
-                  className="bg-white rounded-2xl shadow-md hover:shadow-lg transition-all duration-300 flex flex-col items-center relative overflow-hidden"
-                  style={{ 
-                    background: `linear-gradient(135deg, ${category.color}08, white 50%, ${category.color}08)`
-                  }}
-                >
-                  <div className="absolute top-0 left-0 w-full h-1" style={{ backgroundColor: category.color }} />
-                  
+                <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 flex flex-col items-center overflow-hidden border border-gray-100 hover:border-gray-200">
+                  {/* Icono con fondo sutil */}
                   <div className="w-full p-6">
                     <div 
-                      className="w-16 h-16 mx-auto flex items-center justify-center mb-4 rounded-2xl"
+                      className="w-16 h-16 mx-auto flex items-center justify-center mb-3 rounded-2xl"
                       style={{ 
                         backgroundColor: `${category.color}15`,
-                        color: category.color,
-                        boxShadow: `0 4px 6px -1px ${category.color}15`
+                        color: category.color
                       }}
                       dangerouslySetInnerHTML={{ __html: category.icon }}
                     />
                     
+                    {/* Título y descripción */}
                     <div className="text-center">
-                      <h3 className="text-base font-semibold text-gray-800 mb-1">{category.name}</h3>
+                      <h3 className="text-base font-semibold text-gray-800 mb-1">
+                        {category.name}
+                      </h3>
+                      <p className="text-sm text-gray-600 leading-relaxed">{category.description}</p>
                     </div>
                   </div>
 
-                  <div 
-                    className="w-full py-3 px-4 bg-gray-50 border-t text-xs text-center group-hover:bg-opacity-80 transition-colors"
-                    style={{ color: category.color }}
-                  >
-                    Ver comercios
+                  {/* Botón sencillo */}
+                  <div className="w-full py-3 px-4 bg-gray-50 border-t border-gray-100 text-center">
+                    <span className="text-sm font-medium text-gray-700 group-hover:text-current transition-colors duration-200" style={{ color: category.color }}>
+                      Ver comercios
+                    </span>
                   </div>
                 </div>
               </div>

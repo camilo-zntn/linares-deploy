@@ -192,6 +192,9 @@ export default function Sidebar() {
           if (subItem.title === 'Perfil' && !userData) {
             return false;
           }
+          if (subItem.title === 'Descuentos' && userData?.role?.toLowerCase() === 'commerce') {
+            return false;
+          }
           return true;
         })
       };

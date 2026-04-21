@@ -10,11 +10,11 @@ const user_model_1 = require("../models/user.model");
 const createDiscount = async (req, res) => {
     try {
         const { user } = req;
-        if ((user === null || user === void 0 ? void 0 : user.role) !== 'commerce') {
+        if (user?.role !== 'commerce') {
             return res.status(403).json({ message: 'Solo comercios pueden crear descuentos' });
         }
         const dbUser = await user_model_1.UserModel.findById(user.userId).select('commerceId');
-        if (!(dbUser === null || dbUser === void 0 ? void 0 : dbUser.commerceId)) {
+        if (!dbUser?.commerceId) {
             return res.status(400).json({ message: 'Usuario comercio sin comercio asignado' });
         }
         const { title, description, percent, minReferrals, active, targetRut, daysOfWeek } = req.body || {};
@@ -109,11 +109,11 @@ exports.getAvailableDiscounts = getAvailableDiscounts;
 const getMyDiscounts = async (req, res) => {
     try {
         const { user } = req;
-        if ((user === null || user === void 0 ? void 0 : user.role) !== 'commerce') {
+        if (user?.role !== 'commerce') {
             return res.status(403).json({ message: 'Solo comercios' });
         }
         const dbUser = await user_model_1.UserModel.findById(user.userId).select('commerceId');
-        if (!(dbUser === null || dbUser === void 0 ? void 0 : dbUser.commerceId))
+        if (!dbUser?.commerceId)
             return res.status(400).json({ message: 'Sin comercio asignado' });
         const list = await discount_model_1.DiscountModel.find({ commerceId: dbUser.commerceId }).sort({ createdAt: -1 }).lean();
         res.json({ discounts: list });
@@ -127,12 +127,12 @@ exports.getMyDiscounts = getMyDiscounts;
 const updateDiscount = async (req, res) => {
     try {
         const { user } = req;
-        if ((user === null || user === void 0 ? void 0 : user.role) !== 'commerce') {
+        if (user?.role !== 'commerce') {
             return res.status(403).json({ message: 'Solo comercios' });
         }
         const { id } = req.params;
         const dbUser = await user_model_1.UserModel.findById(user.userId).select('commerceId');
-        if (!(dbUser === null || dbUser === void 0 ? void 0 : dbUser.commerceId))
+        if (!dbUser?.commerceId)
             return res.status(400).json({ message: 'Sin comercio asignado' });
         const discount = await discount_model_1.DiscountModel.findById(id).select('commerceId');
         if (!discount)
@@ -168,12 +168,12 @@ exports.updateDiscount = updateDiscount;
 const deleteDiscount = async (req, res) => {
     try {
         const { user } = req;
-        if ((user === null || user === void 0 ? void 0 : user.role) !== 'commerce') {
+        if (user?.role !== 'commerce') {
             return res.status(403).json({ message: 'Solo comercios' });
         }
         const { id } = req.params;
         const dbUser = await user_model_1.UserModel.findById(user.userId).select('commerceId');
-        if (!(dbUser === null || dbUser === void 0 ? void 0 : dbUser.commerceId))
+        if (!dbUser?.commerceId)
             return res.status(400).json({ message: 'Sin comercio asignado' });
         const discount = await discount_model_1.DiscountModel.findById(id).select('commerceId');
         if (!discount)

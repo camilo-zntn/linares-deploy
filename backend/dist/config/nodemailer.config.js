@@ -101,7 +101,7 @@ const sendVerificationEmail = async (email, code) => {
     }
     catch (err) {
         console.error('Error en sendVerificationEmail:', err);
-        throw new Error(`Error al enviar email: ${(err === null || err === void 0 ? void 0 : err.message) || 'Error desconocido'}`);
+        throw new Error(`Error al enviar email: ${err?.message || 'Error desconocido'}`);
     }
 };
 exports.sendVerificationEmail = sendVerificationEmail;
@@ -178,7 +178,7 @@ const sendResetPasswordEmail = async (email, resetToken) => {
     }
     catch (err) {
         console.error('Error en sendResetPasswordEmail:', err);
-        throw new Error(`Error al enviar email de recuperacion: ${(err === null || err === void 0 ? void 0 : err.message) || 'Error desconocido'}`);
+        throw new Error(`Error al enviar email de recuperacion: ${err?.message || 'Error desconocido'}`);
     }
 };
 exports.sendResetPasswordEmail = sendResetPasswordEmail;
@@ -263,7 +263,7 @@ const sendNewReportNotification = async (userEmail, subject, description) => {
     }
     catch (err) {
         console.error('Error en sendNewReportNotification:', err);
-        throw new Error(`Error al enviar notificación de reporte: ${(err === null || err === void 0 ? void 0 : err.message) || 'Error desconocido'}`);
+        throw new Error(`Error al enviar notificación de reporte: ${err?.message || 'Error desconocido'}`);
     }
 };
 exports.sendNewReportNotification = sendNewReportNotification;
@@ -348,7 +348,7 @@ const sendNewSuggestionNotification = async (userEmail, subject, description) =>
     }
     catch (err) {
         console.error('Error en sendNewSuggestionNotification:', err);
-        throw new Error(`Error al enviar notificación de sugerencia: ${(err === null || err === void 0 ? void 0 : err.message) || 'Error desconocido'}`);
+        throw new Error(`Error al enviar notificación de sugerencia: ${err?.message || 'Error desconocido'}`);
     }
 };
 exports.sendNewSuggestionNotification = sendNewSuggestionNotification;

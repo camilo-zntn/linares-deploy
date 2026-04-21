@@ -296,14 +296,11 @@ const getUserStats = async (req, res) => {
         // Asegurar que todos los roles estén representados
         const roles = ['admin', 'commerce', 'user'];
         const statsMap = new Map(userStats.map(stat => [stat.role, stat]));
-        const result = roles.map(role => {
-            var _a, _b;
-            return ({
-                role,
-                active: (((_a = statsMap.get(role)) === null || _a === void 0 ? void 0 : _a.active) || 0),
-                inactive: (((_b = statsMap.get(role)) === null || _b === void 0 ? void 0 : _b.inactive) || 0)
-            });
-        });
+        const result = roles.map(role => ({
+            role,
+            active: (statsMap.get(role)?.active || 0),
+            inactive: (statsMap.get(role)?.inactive || 0)
+        }));
         res.json(result);
     }
     catch (error) {
@@ -315,7 +312,7 @@ exports.getUserStats = getUserStats;
 const postAnalyticsEvent = async (req, res) => {
     try {
         const { user } = req;
-        if (!(user === null || user === void 0 ? void 0 : user.userId)) {
+        if (!user?.userId) {
             return res.status(401).json({ error: 'Usuario no autenticado' });
         }
         let { sessionId, eventType, categoryId, commerceId, path, durationMs, meta } = req.body || req.query || {};
@@ -324,14 +321,14 @@ const postAnalyticsEvent = async (req, res) => {
             if (typeof meta === 'string')
                 meta = JSON.parse(meta);
         }
-        catch (_a) { }
+        catch { }
         if (!sessionId || !eventType) {
             return res.status(400).json({ error: 'sessionId y eventType son requeridos' });
         }
         // Si tenemos commerceId pero no categoryId, intentamos buscar la categoría del comercio
         if (commerceId && !categoryId) {
             const commerce = await commerce_model_1.CommerceModel.findById(commerceId).select('category');
-            if (commerce === null || commerce === void 0 ? void 0 : commerce.category) {
+            if (commerce?.category) {
                 categoryId = commerce.category;
             }
         }
@@ -393,13 +390,13 @@ const postAnalyticsEvent = async (req, res) => {
             }
         }
         if (eventType === 'CLICK_SOCIAL') {
-            const platform = meta === null || meta === void 0 ? void 0 : meta.platform;
+            const platform = meta?.platform;
             if (platform) {
                 await userAnalytics_model_1.UserAnalyticsModel.updateOne({ userId: uid }, { $inc: { [`socialClicks.${platform}`]: 1 }, $set: { updatedAt: now } });
             }
         }
         if (eventType === 'CLICK_CONTACT') {
-            const type = meta === null || meta === void 0 ? void 0 : meta.type;
+            const type = meta?.type;
             if (type) {
                 await userAnalytics_model_1.UserAnalyticsModel.updateOne({ userId: uid }, { $inc: { [`contactClicks.${type}`]: 1 }, $set: { updatedAt: now } });
             }
@@ -419,7 +416,7 @@ const getUserAnalytics = async (req, res) => {
     try {
         const { userId: paramUserId } = req.params;
         const { user } = req;
-        const userId = paramUserId || (user === null || user === void 0 ? void 0 : user.userId);
+        const userId = paramUserId || user?.userId;
         if (!userId) {
             return res.status(400).json({ error: 'userId requerido' });
         }
@@ -499,14 +496,13 @@ const getTopCommerces = async (req, res) => {
         console.log(`Commerces found: ${commerces.length}`);
         // 4. Combinar datos
         let data = commerces.map((commerce) => {
-            var _a;
             const stats = analyticsMap.get(String(commerce._id));
             return {
                 _id: commerce._id,
                 name: commerce.name,
-                category: ((_a = commerce.category) === null || _a === void 0 ? void 0 : _a.name) || 'Sin Categoría',
-                visits: (stats === null || stats === void 0 ? void 0 : stats.visits) || 0,
-                totalTimeMs: (stats === null || stats === void 0 ? void 0 : stats.totalTimeMs) || 0
+                category: commerce.category?.name || 'Sin Categoría',
+                visits: stats?.visits || 0,
+                totalTimeMs: stats?.totalTimeMs || 0
             };
         });
         // 5. Ordenar

@@ -42,7 +42,6 @@ const setupSocketIO = (io) => {
         console.log(`Usuario conectado: ${socket.userName || socket.userEmail || 'Anónimo'} (${socket.id})`);
         // Unirse a una sala de chat específica
         socket.on('join_request_room', async (data) => {
-            var _a;
             try {
                 const { requestId, email } = data;
                 // Verificar que el usuario tiene acceso a esta solicitud
@@ -53,7 +52,7 @@ const setupSocketIO = (io) => {
                 }
                 // Verificar permisos
                 const hasAccess = socket.userRole === 'admin' ||
-                    (socket.userId && ((_a = request.userId) === null || _a === void 0 ? void 0 : _a.toString()) === socket.userId) ||
+                    (socket.userId && request.userId?.toString() === socket.userId) ||
                     (email && request.email === email) ||
                     (socket.userEmail && request.email === socket.userEmail);
                 if (!hasAccess) {
@@ -72,7 +71,6 @@ const setupSocketIO = (io) => {
         });
         // Enviar mensaje
         socket.on('send_message', async (data) => {
-            var _a;
             try {
                 const { requestId, message, email } = data;
                 if (!message.trim()) {
@@ -87,7 +85,7 @@ const setupSocketIO = (io) => {
                 }
                 // Verificar permisos
                 const hasAccess = socket.userRole === 'admin' ||
-                    (socket.userId && ((_a = request.userId) === null || _a === void 0 ? void 0 : _a.toString()) === socket.userId) ||
+                    (socket.userId && request.userId?.toString() === socket.userId) ||
                     (email && request.email === email) ||
                     (socket.userEmail && request.email === socket.userEmail);
                 if (!hasAccess) {
@@ -136,7 +134,6 @@ const setupSocketIO = (io) => {
         });
         // Marcar solicitud como resuelta
         socket.on('resolve_request', async (data) => {
-            var _a;
             try {
                 const { requestId, email } = data;
                 const request = await request_model_1.RequestModel.findById(requestId);
@@ -146,7 +143,7 @@ const setupSocketIO = (io) => {
                 }
                 // Verificar permisos
                 const hasAccess = socket.userRole === 'admin' ||
-                    (socket.userId && ((_a = request.userId) === null || _a === void 0 ? void 0 : _a.toString()) === socket.userId) ||
+                    (socket.userId && request.userId?.toString() === socket.userId) ||
                     (email && request.email === email) ||
                     (socket.userEmail && request.email === socket.userEmail);
                 if (!hasAccess) {

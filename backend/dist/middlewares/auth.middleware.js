@@ -7,9 +7,8 @@ exports.optionalAuthMiddleware = exports.isVerified = exports.isCommerce = expor
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const user_model_1 = require("../models/user.model");
 const authMiddleware = async (req, res, next) => {
-    var _a, _b, _c;
     try {
-        let token = (_a = req.headers.authorization) === null || _a === void 0 ? void 0 : _a.split(' ')[1];
+        let token = req.headers.authorization?.split(' ')[1];
         if (!token && req.query && typeof req.query.token === 'string') {
             token = req.query.token;
         }
@@ -30,7 +29,7 @@ const authMiddleware = async (req, res, next) => {
             role: decoded.role,
             name: user.name,
             email: user.email,
-            commerceId: (_c = (_b = user.commerceId) === null || _b === void 0 ? void 0 : _b.toString) === null || _c === void 0 ? void 0 : _c.call(_b)
+            commerceId: user.commerceId?.toString?.()
         };
         next();
     }
@@ -41,8 +40,7 @@ const authMiddleware = async (req, res, next) => {
 };
 exports.authMiddleware = authMiddleware;
 const isAdmin = (req, res, next) => {
-    var _a;
-    if (((_a = req.user) === null || _a === void 0 ? void 0 : _a.role) !== 'admin') {
+    if (req.user?.role !== 'admin') {
         res.status(403).json({ message: 'Acceso denegado: Se requiere rol de administrador' });
         return;
     }
@@ -50,8 +48,7 @@ const isAdmin = (req, res, next) => {
 };
 exports.isAdmin = isAdmin;
 const isCommerce = (req, res, next) => {
-    var _a;
-    if (((_a = req.user) === null || _a === void 0 ? void 0 : _a.role) !== 'commerce') {
+    if (req.user?.role !== 'commerce') {
         res.status(403).json({ message: 'Acceso denegado: Se requiere rol de comercio' });
         return;
     }
@@ -68,9 +65,8 @@ const isVerified = (req, res, next) => {
 exports.isVerified = isVerified;
 // Nuevo middleware opcional para solicitudes de soporte
 const optionalAuthMiddleware = async (req, res, next) => {
-    var _a;
     try {
-        const token = (_a = req.headers.authorization) === null || _a === void 0 ? void 0 : _a.split(' ')[1];
+        const token = req.headers.authorization?.split(' ')[1];
         if (token) {
             try {
                 const decoded = jsonwebtoken_1.default.verify(token, process.env.JWT_SECRET || 'defaultSecret');

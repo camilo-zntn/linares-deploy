@@ -6,10 +6,9 @@ const user_model_1 = require("../models/user.model");
 const nodemailer_config_1 = require("../config/nodemailer.config");
 // Crear nueva solicitud de soporte
 const createRequest = async (req, res) => {
-    var _a;
     try {
         const { email, subject, description, type } = req.body;
-        const userId = ((_a = req.user) === null || _a === void 0 ? void 0 : _a.userId) || null;
+        const userId = req.user?.userId || null;
         // Validar datos requeridos
         if (!email || !subject || !description || !type) {
             return res.status(400).json({
@@ -113,10 +112,9 @@ const getAllRequests = async (req, res) => {
 exports.getAllRequests = getAllRequests;
 // Obtener solicitudes del usuario
 const getUserRequests = async (req, res) => {
-    var _a, _b;
     try {
-        const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.userId;
-        const userEmail = (_b = req.user) === null || _b === void 0 ? void 0 : _b.email;
+        const userId = req.user?.userId;
+        const userEmail = req.user?.email;
         if (!userId && !userEmail) {
             return res.status(401).json({ message: 'Usuario no autenticado' });
         }
@@ -142,12 +140,11 @@ const getUserRequests = async (req, res) => {
 exports.getUserRequests = getUserRequests;
 // Obtener solicitud por ID
 const getRequestById = async (req, res) => {
-    var _a, _b, _c, _d;
     try {
         const { id } = req.params;
-        const userRole = (_a = req.user) === null || _a === void 0 ? void 0 : _a.role;
-        const userId = (_b = req.user) === null || _b === void 0 ? void 0 : _b.userId;
-        const userEmail = (_c = req.user) === null || _c === void 0 ? void 0 : _c.email;
+        const userRole = req.user?.role;
+        const userId = req.user?.userId;
+        const userEmail = req.user?.email;
         const requestEmail = req.query.email;
         const request = await request_model_1.RequestModel
             .findById(id)
@@ -157,7 +154,7 @@ const getRequestById = async (req, res) => {
         }
         // Verificar permisos de acceso
         const hasAccess = userRole === 'admin' ||
-            (userId && ((_d = request.userId) === null || _d === void 0 ? void 0 : _d.toString()) === userId) ||
+            (userId && request.userId?.toString() === userId) ||
             (requestEmail && request.email === requestEmail) ||
             (userEmail && request.email === userEmail);
         if (!hasAccess) {
@@ -173,13 +170,12 @@ const getRequestById = async (req, res) => {
 exports.getRequestById = getRequestById;
 // Enviar mensaje (ahora principalmente para compatibilidad HTTP)
 const sendMessage = async (req, res) => {
-    var _a, _b, _c, _d;
     try {
         const { id } = req.params;
         const { message } = req.body;
-        const userRole = (_a = req.user) === null || _a === void 0 ? void 0 : _a.role;
-        const userId = (_b = req.user) === null || _b === void 0 ? void 0 : _b.userId;
-        const userEmail = (_c = req.user) === null || _c === void 0 ? void 0 : _c.email;
+        const userRole = req.user?.role;
+        const userId = req.user?.userId;
+        const userEmail = req.user?.email;
         const requestEmail = req.query.email;
         if (!message || !message.trim()) {
             return res.status(400).json({ message: 'El mensaje es requerido' });
@@ -190,7 +186,7 @@ const sendMessage = async (req, res) => {
         }
         // Verificar permisos
         const hasAccess = userRole === 'admin' ||
-            (userId && ((_d = request.userId) === null || _d === void 0 ? void 0 : _d.toString()) === userId) ||
+            (userId && request.userId?.toString() === userId) ||
             (requestEmail && request.email === requestEmail) ||
             (userEmail && request.email === userEmail);
         if (!hasAccess) {
@@ -297,12 +293,11 @@ const deleteRequest = async (req, res) => {
 exports.deleteRequest = deleteRequest;
 // Marcar solicitud como resuelta
 const markAsResolved = async (req, res) => {
-    var _a, _b, _c, _d;
     try {
         const { id } = req.params;
-        const userRole = (_a = req.user) === null || _a === void 0 ? void 0 : _a.role;
-        const userId = (_b = req.user) === null || _b === void 0 ? void 0 : _b.userId;
-        const userEmail = (_c = req.user) === null || _c === void 0 ? void 0 : _c.email;
+        const userRole = req.user?.role;
+        const userId = req.user?.userId;
+        const userEmail = req.user?.email;
         const requestEmail = req.query.email;
         const request = await request_model_1.RequestModel.findById(id);
         if (!request) {
@@ -310,7 +305,7 @@ const markAsResolved = async (req, res) => {
         }
         // Verificar permisos
         const hasAccess = userRole === 'admin' ||
-            (userId && ((_d = request.userId) === null || _d === void 0 ? void 0 : _d.toString()) === userId) ||
+            (userId && request.userId?.toString() === userId) ||
             (requestEmail && request.email === requestEmail) ||
             (userEmail && request.email === userEmail);
         if (!hasAccess) {

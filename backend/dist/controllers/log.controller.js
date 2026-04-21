@@ -34,12 +34,11 @@ exports.logController = {
     },
     // Crear un nuevo log (autenticado)
     createLog: async (req, res) => {
-        var _a, _b;
         try {
             const { action, resourceType, resourceId, details, changes } = req.body;
             // Validar autenticación
-            const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.userId;
-            const username = ((_b = req.user) === null || _b === void 0 ? void 0 : _b.name) || 'Usuario';
+            const userId = req.user?.userId;
+            const username = req.user?.name || 'Usuario';
             if (!userId) {
                 res.status(401).json({ success: false, message: 'Usuario no autenticado' });
                 return;

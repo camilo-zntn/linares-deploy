@@ -171,12 +171,6 @@ const Navbar = () => {
                     path: '/views/discounts/create',
                     disabled: false
                 },
-                {
-                    icon: Percent,
-                    label: 'Descuentos',
-                    path: '/views/discounts',
-                    disabled: false
-                },
                 ...baseItems
             ];
         }

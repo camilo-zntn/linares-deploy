@@ -151,7 +151,7 @@ exports.commerceController = {
             if (req.file) {
                 // Obtener el comercio actual para encontrar la imagen existente
                 const oldCommerce = await commerce_model_1.CommerceModel.findById(id);
-                if (oldCommerce === null || oldCommerce === void 0 ? void 0 : oldCommerce.imageUrl) {
+                if (oldCommerce?.imageUrl) {
                     const normalizedOldImageUrl = oldCommerce.imageUrl.startsWith('/')
                         ? oldCommerce.imageUrl.slice(1)
                         : oldCommerce.imageUrl;
@@ -261,9 +261,8 @@ exports.commerceController = {
         }
     },
     getMyCommerce: async (req, res) => {
-        var _a;
         try {
-            const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.userId;
+            const userId = req.user?.userId;
             // Buscar el usuario para obtener el commerceId asociado
             const user = await user_model_1.UserModel.findById(userId);
             if (!user || !user.commerceId) {

@@ -758,8 +758,8 @@ const ProfilePage = () => {
                     <div className="bg-emerald-50 rounded-lg p-4">
                       <div className="text-center">
                         <div className="text-3xl font-bold text-emerald-600 mb-2">
-                          {referralStats?.referralCount || 0}
-                        </div>
+                        {referralStats?.referredUsers?.length || 0}
+                      </div>
                         <p className="text-sm text-emerald-700">
                           Personas que se han registrado con tu código
                         </p>
@@ -1072,7 +1072,7 @@ const ProfilePage = () => {
                   <div className="bg-emerald-50 rounded-lg p-4">
                     <div className="text-center">
                       <div className="text-3xl font-bold text-emerald-600 mb-2">
-                        {referralStats?.referralCount || 0}
+                        {referralStats?.referredUsers?.length || 0}
                       </div>
                       <p className="text-sm text-emerald-700">
                         Personas que se han registrado con tu código
@@ -1084,19 +1084,15 @@ const ProfilePage = () => {
                     <div className="mt-4">
                       <h4 className="text-md font-medium text-gray-800 mb-3">Lista de referidos:</h4>
                       <div className="space-y-2">
+                        <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
                         {referralStats.referredUsers.map((referredUser, index) => (
                           <div key={index} className="bg-white border border-gray-200 rounded-lg p-3">
-                            <div className="flex justify-between items-center">
-                              <div>
-                                <p className="font-medium text-gray-900">{referredUser.name}</p>
-                                <p className="text-sm text-gray-600">{referredUser.email}</p>
-                              </div>
-                              <div className="text-xs text-gray-500">
-                                {new Date(referredUser.createdAt).toLocaleDateString()}
-                              </div>
+                            <div className="flex items-center">
+                              <p className="font-medium text-gray-900">{referredUser.name}</p>
                             </div>
                           </div>
                         ))}
+                      </div>
                       </div>
                     </div>
                   )}

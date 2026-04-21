@@ -215,15 +215,15 @@ export default function CommerceDetailPage() {
               commerce.contact?.socialMedia?.whatsapp) && (
               <div className="mb-6 sm:mb-8">
                 <h2 className="text-lg sm:text-xl font-semibold text-gray-800 mb-3 sm:mb-4">Redes Sociales</h2>
-                <div className="flex gap-3 sm:gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   {commerce.contact.socialMedia.facebook && (
                     <a href={commerce.contact.socialMedia.facebook}
                        target="_blank"
                        rel="noopener noreferrer"
                        onClick={() => trackSocialClick('facebook')}
-                       className="p-2 sm:p-3 bg-white rounded-lg hover:bg-blue-50 transition-colors"
-                       title="Facebook">
-                      <Facebook className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
+                       className="flex items-center gap-3 p-3 sm:p-4 bg-white rounded-lg hover:bg-blue-50 transition-colors w-full">
+                      <Facebook className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600 flex-shrink-0" />
+                      <span className="text-sm sm:text-base font-medium text-gray-700">Facebook</span>
                     </a>
                   )}
                   {commerce.contact.socialMedia.instagram && (
@@ -231,9 +231,9 @@ export default function CommerceDetailPage() {
                        target="_blank"
                        rel="noopener noreferrer"
                        onClick={() => trackSocialClick('instagram')}
-                       className="p-2 sm:p-3 bg-white rounded-lg hover:bg-pink-50 transition-colors"
-                       title="Instagram">
-                      <Instagram className="h-5 w-5 sm:h-6 sm:w-6 text-pink-600" />
+                       className="flex items-center gap-3 p-3 sm:p-4 bg-white rounded-lg hover:bg-pink-50 transition-colors w-full">
+                      <Instagram className="h-5 w-5 sm:h-6 sm:w-6 text-pink-600 flex-shrink-0" />
+                      <span className="text-sm sm:text-base font-medium text-gray-700">Instagram</span>
                     </a>
                   )}
                   {commerce.contact.socialMedia.whatsapp && (
@@ -241,9 +241,9 @@ export default function CommerceDetailPage() {
                        target="_blank"
                        rel="noopener noreferrer"
                        onClick={() => trackSocialClick('whatsapp')}
-                       className="p-2 sm:p-3 bg-white rounded-lg hover:bg-green-50 transition-colors"
-                       title="WhatsApp">
-                      <MessageCircle className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
+                       className="flex items-center gap-3 p-3 sm:p-4 bg-white rounded-lg hover:bg-green-50 transition-colors w-full">
+                      <MessageCircle className="h-5 w-5 sm:h-6 sm:w-6 text-green-600 flex-shrink-0" />
+                      <span className="text-sm sm:text-base font-medium text-gray-700">WhatsApp</span>
                     </a>
                   )}
                 </div>
