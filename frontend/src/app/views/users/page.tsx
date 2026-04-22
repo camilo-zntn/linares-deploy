@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Pencil, Trash2, Search, Filter, X, Copy } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { API_BASE_URL } from '@/config/api';
 
 interface User {
   _id: string;
@@ -118,7 +119,7 @@ const UsersPage = () => {
         return;
       }
 
-      const response = await fetch('http://localhost:5000/api/users/all', {
+      const response = await fetch(`${API_BASE_URL}/api/users/all`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -138,7 +139,7 @@ const UsersPage = () => {
   const fetchCommerces = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/commerces', {
+      const response = await fetch(`${API_BASE_URL}/api/commerces`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -164,7 +165,7 @@ const UsersPage = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/users/${userId}/role`, {
+      const response = await fetch(`${API_BASE_URL}/api/users/${userId}/role`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -198,7 +199,7 @@ const UsersPage = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/users/${userId}/commerce`, {
+      const response = await fetch(`${API_BASE_URL}/api/users/${userId}/commerce`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -232,7 +233,7 @@ const UsersPage = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/users/${userId}/status`, {
+      const response = await fetch(`${API_BASE_URL}/api/users/${userId}/status`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -265,7 +266,7 @@ const UsersPage = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/users/${userId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/users/${userId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -293,7 +294,7 @@ const UsersPage = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/users/${userId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/users/${userId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`

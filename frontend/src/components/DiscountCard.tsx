@@ -1,6 +1,7 @@
 'use client';
 
 import { Store } from 'lucide-react';
+import { API_BASE_URL } from '@/config/api';
 
 interface DiscountCardProps {
   data: {
@@ -26,7 +27,7 @@ export default function DiscountCard({ data, daysMap = DEFAULT_DAYS_MAP }: Disco
   const getImageUrl = (url?: string) => {
     if (!url) return undefined;
     if (url.startsWith('http')) return url;
-    return `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}${url}`;
+    return `${API_BASE_URL}${url}`;
   };
 
   const bgImage = getImageUrl(data.imageUrl);

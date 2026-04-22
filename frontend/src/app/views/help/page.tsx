@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { MessageCircleQuestion, Bug, Lightbulb, Send, MessageCircle, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '@/context/AuthContext';
+import { API_BASE_URL, apiRoutes } from '@/config/api';
 
 interface Message {
   _id: string;
@@ -98,7 +99,7 @@ export default function HelpPage() {
     
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/requests/${activeRequest._id}`, {
+      const response = await fetch(apiRoutes.requests.byId(activeRequest._id), {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -121,7 +122,7 @@ export default function HelpPage() {
     
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/requests/${activeRequest._id}/messages`, {
+      const response = await fetch(`${API_BASE_URL}/api/requests/${activeRequest._id}/messages`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -209,7 +210,7 @@ export default function HelpPage() {
   
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/requests/my-requests', {
+      const response = await fetch(apiRoutes.requests.myRequests, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -250,7 +251,7 @@ export default function HelpPage() {
     
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/requests', {
+      const response = await fetch(`${API_BASE_URL}/api/requests`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -324,7 +325,7 @@ export default function HelpPage() {
     
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/requests/${activeRequest._id}`, {
+      const response = await fetch(apiRoutes.requests.byId(activeRequest._id), {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`

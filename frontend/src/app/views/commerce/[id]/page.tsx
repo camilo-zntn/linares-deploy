@@ -7,6 +7,7 @@ import { Facebook, Instagram, MessageCircle, Mail, Phone, Globe, MapPin, Clock }
 import { toast } from 'react-hot-toast';
 import { createAnalyticsView, trackSocialClick, trackContactClick, trackMapClick } from '../../../../lib/analytics';
 import TestTimer from '../../../../components/TestTimer/page';
+import { API_BASE_URL } from '@/config/api';
 
 interface DaySchedule {
   start: string;
@@ -59,7 +60,7 @@ export default function CommerceDetailPage() {
   const fetchCommerceDetails = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/commerces/${params.id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/commerces/${params.id}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -138,7 +139,7 @@ export default function CommerceDetailPage() {
                 <img 
                   src={commerce.imageUrl.startsWith('http') 
                     ? commerce.imageUrl 
-                    : `http://localhost:5000${commerce.imageUrl}`}
+                    : `${API_BASE_URL}${commerce.imageUrl}`}
                   alt={commerce.name}
                   className="w-full h-full object-cover rounded-lg sm:rounded-xl"
                 />

@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { io, Socket } from 'socket.io-client';
-import { apiRoutes } from '../../../config/api';
+import { API_BASE_URL, apiRoutes } from '../../../config/api';
 
 interface Request {
   _id: string;
@@ -140,7 +140,7 @@ export default function RequestsPage() {
   useEffect(() => {
     if (user) {
       const token = localStorage.getItem('token');
-      const socketInstance = io(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000', {
+      const socketInstance = io(API_BASE_URL, {
         auth: {
           token: token,
           email: user.email

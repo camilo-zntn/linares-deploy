@@ -10,23 +10,25 @@ if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
   process.exit(1);
 }
 
+const redirectUri = process.env.GOOGLE_REDIRECT_URI || 'http://localhost:4000/auth/callback';
+
 const oauth2Client = new OAuth2Client(
   process.env.GOOGLE_CLIENT_ID,
   process.env.GOOGLE_CLIENT_SECRET,
-  'http://localhost:4000/auth/callback' // Cambiar a URI autorizada
+  redirectUri
 );
 
 const url = oauth2Client.generateAuthUrl({
   access_type: 'offline',
   scope: ['https://mail.google.com/'],
   prompt: 'consent',
-  redirect_uri: 'http://localhost:4000/auth/callback' // URI explicita
+  redirect_uri: redirectUri
 });
 
 const server = http.createServer(async (req, res) => {
   try {
     // Actualizar path en la URL
-    const code = new URL(req.url!, 'http://localhost:4000/auth/callback').searchParams.get('code');
+    const code = new URL(req.url!, redirectUri).searchParams.get('code');
     if (code) {
       const { tokens } = await oauth2Client.getToken(code);
       console.log('Refresh Token:', tokens.refresh_token);

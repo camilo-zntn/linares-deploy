@@ -5,7 +5,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://tu-backend.onrender.com/api/:path*"
+      "destination": "https://linares-deploy.onrender.com/api/:path*"
     }
   ]
 }

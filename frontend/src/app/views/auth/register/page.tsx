@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useSearchParams } from 'next/navigation';
 import { User, Mail, Lock, Eye, EyeOff, Gift } from 'lucide-react';
 import Image from 'next/image';
+import { API_BASE_URL } from '@/config/api';
 
 // Utilidades para validación de RUT
 const cleanRut = (rut: string): string => {
@@ -142,7 +143,7 @@ const Register = () => {
     }
 
     try {
-      const response = await fetch(`http://localhost:5000/api/referrals/validate/${code}`);
+      const response = await fetch(`${API_BASE_URL}/api/referrals/validate/${code}`);
       const data = await response.json();
       
       if (data.valid) {
@@ -228,7 +229,7 @@ const Register = () => {
     }
 
     try {
-      const response = await fetch('http://localhost:5000/api/auth/register', {
+      const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

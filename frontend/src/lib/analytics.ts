@@ -1,6 +1,7 @@
 "use client";
 import axios from 'axios';
 import { io, Socket } from 'socket.io-client';
+import { API_BASE_URL } from '@/config/api';
 
 type ViewContext = {
   categoryId?: string | null;
@@ -34,7 +35,7 @@ const getSessionId = () => {
 const sendEvent = async (payload: any) => {
   const token = getToken();
   if (!token) return;
-  const url = `${process.env.NEXT_PUBLIC_API_URL}/api/analytics/events`;
+  const url = `${API_BASE_URL}/api/analytics/events`;
 
   const type = payload?.eventType as string | undefined;
   const canBeacon = typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function';
@@ -104,7 +105,7 @@ export const useAnalyticsView = (ctx: ViewContext) => {
   const init = () => {
     const token = getToken();
     if (token) {
-      socket = io(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000', {
+      socket = io(API_BASE_URL, {
         transports: ['websocket'],
         auth: { token },
       });
@@ -206,7 +207,7 @@ export const createAnalyticsView = (ctx: ViewContext) => {
   const init = () => {
     const token = getToken();
     if (token) {
-      socket = io(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000', {
+      socket = io(API_BASE_URL, {
         transports: ['websocket'],
         auth: { token },
       });

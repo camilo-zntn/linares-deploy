@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { Clock, Heart, HeartOff } from 'lucide-react';
+import { API_BASE_URL, apiRoutes } from '@/config/api';
 
 interface DaySchedule {
   start: string;
@@ -57,7 +58,7 @@ export default function SavedPage() {
         return;
       }
 
-      const response = await fetch('http://localhost:5000/api/users/favorites', {
+      const response = await fetch(apiRoutes.favorites, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -76,7 +77,7 @@ export default function SavedPage() {
   const removeFromFavorites = async (commerceId: string) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/users/favorites/${commerceId}`, {
+      const response = await fetch(`${apiRoutes.favorites}/${commerceId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -159,7 +160,7 @@ export default function SavedPage() {
                   <img 
                     src={commerce.imageUrl.startsWith('http') 
                       ? commerce.imageUrl 
-                      : `http://localhost:5000${commerce.imageUrl}`}
+                          : `${API_BASE_URL}${commerce.imageUrl}`}
                     alt={commerce.name}
                     className="w-full h-full object-cover"
                   />

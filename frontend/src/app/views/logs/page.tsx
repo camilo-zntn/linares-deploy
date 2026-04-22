@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { API_BASE_URL } from '@/config/api'
 
 interface Log {
   _id: string
@@ -30,7 +31,7 @@ export default function LogsViewer() {
           return
         }
 
-        const response = await fetch('http://localhost:5000/api/logs', {
+        const response = await fetch(`${API_BASE_URL}/api/logs`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'

@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
+import { apiRoutes } from '@/config/api';
 
 interface User {
   _id: string;
@@ -104,7 +105,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (!state.user || !state.token) return;
     
     try {
-      const response = await fetch('/api/requests/my-requests', {
+      const response = await fetch(apiRoutes.requests.myRequests, {
         headers: {
           'Authorization': `Bearer ${state.token}`
         }
@@ -175,7 +176,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         body.email = activeRequest.email;
       }
       
-      const response = await fetch(`/api/requests/${requestId}/resolve`, {
+      const response = await fetch(apiRoutes.requests.resolve(requestId), {
         method: 'PATCH',
         headers,
         body: JSON.stringify(body)

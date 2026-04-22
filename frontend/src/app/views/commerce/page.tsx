@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Plus, Pencil, Trash2, Facebook, Instagram, MessageCircle, Mail, Phone, Globe } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import Link from 'next/link';
+import { API_BASE_URL } from '@/config/api';
 
 interface DaySchedule {
   start: string;
@@ -117,7 +118,7 @@ export default function CommercePage() {
         return;
       }
 
-      const response = await fetch('http://localhost:5000/api/commerces', {
+      const response = await fetch(`${API_BASE_URL}/api/commerces`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -138,7 +139,7 @@ export default function CommercePage() {
   const fetchCategories = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/categories', {
+      const response = await fetch(`${API_BASE_URL}/api/categories`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -180,8 +181,8 @@ export default function CommercePage() {
       }
 
       const url = editingId 
-        ? `http://localhost:5000/api/commerces/${editingId}`
-        : 'http://localhost:5000/api/commerces';
+        ? `${API_BASE_URL}/api/commerces/${editingId}`
+        : `${API_BASE_URL}/api/commerces`;
 
       const response = await fetch(url, {
         method: editingId ? 'PUT' : 'POST',
@@ -234,7 +235,7 @@ export default function CommercePage() {
     
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/commerces/${commerceToDelete}`, {
+      const response = await fetch(`${API_BASE_URL}/api/commerces/${commerceToDelete}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -309,7 +310,7 @@ export default function CommercePage() {
                 <img 
                   src={commerce.imageUrl.startsWith('http') 
                     ? commerce.imageUrl 
-                    : `http://localhost:5000${commerce.imageUrl}`}
+                    : `${API_BASE_URL}${commerce.imageUrl}`}
                   alt={commerce.name}
                   className="w-full h-full object-cover"
                 />
@@ -658,7 +659,7 @@ export default function CommercePage() {
                               ? URL.createObjectURL(formData.imageFile)
                               : formData.imageUrl.startsWith('http') 
                                 ? formData.imageUrl 
-                                : `http://localhost:5000${formData.imageUrl}`
+                                : `${API_BASE_URL}${formData.imageUrl}`
                             }
                             alt="Preview"
                             className="w-full h-32 object-cover rounded-lg"

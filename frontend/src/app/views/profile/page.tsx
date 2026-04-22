@@ -5,6 +5,7 @@ import { User, Lock, Eye, EyeOff, Check, X, Edit, Copy, Share2, Users, ChevronDo
 import { useAuth } from '../../../context/AuthContext';
 import { toast } from 'react-hot-toast';
 import { formatRutAsUserTypes, cleanRut } from '../../../utils/rutValidator';
+import { API_BASE_URL } from '@/config/api';
 
 interface PasswordRequirement {
   text: string;
@@ -179,7 +180,7 @@ const ProfilePage = () => {
   // Función para obtener estadísticas de referidos
   const fetchReferralStats = async () => {
     try {
-      const response = await fetch('/api/referrals/stats', {
+      const response = await fetch(`${API_BASE_URL}/api/referrals/stats`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -217,7 +218,7 @@ const ProfilePage = () => {
     
     try {
       const cleanedRut = cleanRut(rut);
-      const response = await fetch(`/api/auth/check-rut?rut=${cleanedRut}`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/check-rut?rut=${cleanedRut}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -276,7 +277,7 @@ const ProfilePage = () => {
     setIsLoading(true);
     
     try {
-      const response = await fetch('/api/users/profile', {
+      const response = await fetch(`${API_BASE_URL}/api/users/profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -357,7 +358,7 @@ const ProfilePage = () => {
     setIsLoading(true);
     
     try {
-      const response = await fetch('/api/users/change-password', {
+      const response = await fetch(`${API_BASE_URL}/api/users/change-password`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

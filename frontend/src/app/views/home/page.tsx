@@ -8,7 +8,7 @@ import { Clock, Phone, Mail, Globe, Facebook, Instagram, MessageCircle, Heart, L
 import { createAnalyticsView, trackSocialClick, trackContactClick, trackMapClick } from '../../../lib/analytics';
 import TestTimer from '../../../components/TestTimer/page';
 // Importar la configuración de API
-import { apiRoutes } from '../../../config/api';
+import { API_BASE_URL, apiRoutes } from '../../../config/api';
 
 interface DaySchedule {
   start: string;
@@ -147,7 +147,7 @@ export default function HomePage() {
       
       if (isFavorite) {
         // Remover de favoritos
-        const response = await fetch(`http://localhost:5000/api/users/favorites/${commerceId}`, {
+        const response = await fetch(`${apiRoutes.favorites}/${commerceId}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${token}`
@@ -160,7 +160,7 @@ export default function HomePage() {
         }
       } else {
         // Agregar a favoritos
-        const response = await fetch('http://localhost:5000/api/users/favorites', {
+        const response = await fetch(apiRoutes.favorites, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -328,7 +328,7 @@ export default function HomePage() {
                     <img 
                       src={commerce.imageUrl.startsWith('http') 
                         ? commerce.imageUrl 
-                        : `http://localhost:5000${commerce.imageUrl}`}
+                        : `${API_BASE_URL}${commerce.imageUrl}`}
                       alt={commerce.name}
                       className="w-full h-full object-cover"
                     />
@@ -369,7 +369,7 @@ export default function HomePage() {
                     <img 
                       src={selectedCommerce.imageUrl.startsWith('http') 
                         ? selectedCommerce.imageUrl 
-                        : `http://localhost:5000${selectedCommerce.imageUrl}`}
+                        : `${API_BASE_URL}${selectedCommerce.imageUrl}`}
                       alt={selectedCommerce.name}
                       className="aspect-square object-cover rounded-xl"
                     />

@@ -3,9 +3,11 @@ interface AuthConfig {
   tokenKey: string;
 }
 
+import { API_BASE_URL } from './api';
+
 export const authConfig: AuthConfig = {
-  apiUrl: 'http://localhost:5000/api',
-  tokenKey: 'authToken'
+  apiUrl: `${API_BASE_URL}/api`,
+  tokenKey: 'token'
 };
 
 export const getAuthToken = (): string | null => {

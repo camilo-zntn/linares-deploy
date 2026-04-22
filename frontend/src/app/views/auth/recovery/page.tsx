@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Lock, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import Image from 'next/image';
+import { API_BASE_URL } from '@/config/api';
 
 export default function Recovery() {
   const router = useRouter();
@@ -28,7 +29,7 @@ export default function Recovery() {
           return;
         }
 
-        const response = await fetch(`http://localhost:5000/api/auth/verify-reset-token/${token}`);
+        const response = await fetch(`${API_BASE_URL}/api/auth/verify-reset-token/${token}`);
         const data = await response.json();
 
         if (!response.ok) {
@@ -61,7 +62,7 @@ export default function Recovery() {
         return;
       }
   
-      const response = await fetch('http://localhost:5000/api/auth/reset-password/new', {
+      const response = await fetch(`${API_BASE_URL}/api/auth/reset-password/new`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

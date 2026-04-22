@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
+import { API_BASE_URL } from '@/config/api';
 
 const VerifyCode = () => {
   const router = useRouter();
@@ -51,7 +52,7 @@ const VerifyCode = () => {
     try {
       const verificationCode = code.join('');
       
-      const response = await fetch('http://localhost:5000/api/auth/verify', {
+      const response = await fetch(`${API_BASE_URL}/api/auth/verify`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

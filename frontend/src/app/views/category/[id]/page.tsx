@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { useAnalyticsView } from '../../../../lib/analytics';
 import TestTimer from '../../../../components/TestTimer/page';
+import { API_BASE_URL } from '@/config/api';
 
 interface DaySchedule {
   start: string;
@@ -42,7 +43,7 @@ export default function CategoryCommercePage() {
   const fetchCategoryCommerces = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/categories/${params.id}/commerces`, {
+      const response = await fetch(`${API_BASE_URL}/api/categories/${params.id}/commerces`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -97,7 +98,7 @@ export default function CategoryCommercePage() {
               <img 
                 src={commerce.imageUrl.startsWith('http') 
                   ? commerce.imageUrl 
-                  : `http://localhost:5000${commerce.imageUrl}`}
+                  : `${API_BASE_URL}${commerce.imageUrl}`}
                 alt={commerce.name}
                 className="w-full h-full object-cover"
               />

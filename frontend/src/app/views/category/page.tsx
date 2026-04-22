@@ -5,6 +5,7 @@ import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { API_BASE_URL } from '@/config/api';
 
 interface Category {
   _id: string;
@@ -36,7 +37,7 @@ export default function CategoryPage() {
         return;
       }
 
-      const response = await fetch('http://localhost:5000/api/categories', {
+      const response = await fetch(`${API_BASE_URL}/api/categories`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -65,8 +66,8 @@ export default function CategoryPage() {
       }
 
       const url = editingId 
-        ? `http://localhost:5000/api/categories/${editingId}`
-        : 'http://localhost:5000/api/categories';
+        ? `${API_BASE_URL}/api/categories/${editingId}`
+        : `${API_BASE_URL}/api/categories`;
 
       const response = await fetch(url, {
         method: editingId ? 'PUT' : 'POST',
@@ -105,7 +106,7 @@ export default function CategoryPage() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/categories/${categoryToDelete}`, {
+      const response = await fetch(`${API_BASE_URL}/api/categories/${categoryToDelete}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`

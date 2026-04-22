@@ -8,10 +8,16 @@ const getApiUrl = () => {
     if (currentUrl.includes('ngrok')) {
       return currentUrl;
     }
+
+    if (process.env.NEXT_PUBLIC_API_URL) {
+      return process.env.NEXT_PUBLIC_API_URL;
+    }
+
+    return currentUrl;
   }
   
   // Usar la variable de entorno o fallback
-  return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+  return process.env.NEXT_PUBLIC_API_URL || '';
 };
 
 export const API_BASE_URL = getApiUrl();
@@ -27,7 +33,7 @@ export const apiRoutes = {
     all: `${API_BASE_URL}/api/requests/all`,
     myRequests: `${API_BASE_URL}/api/requests/my-requests`,
     byId: (id: string) => `${API_BASE_URL}/api/requests/${id}`,
-    sendMessage: (id: string) => `${API_BASE_URL}/api/requests/${id}/message`,
+    sendMessage: (id: string) => `${API_BASE_URL}/api/requests/${id}/messages`,
     updateStatus: (id: string) => `${API_BASE_URL}/api/requests/${id}/status`,
     delete: (id: string) => `${API_BASE_URL}/api/requests/${id}`,
     resolve: (id: string) => `${API_BASE_URL}/api/requests/${id}/resolve`

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Store, Mail, Phone, Globe, Facebook, Instagram, MessageCircle, MapPin, Building2, FileText, Save, Clock } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '@/context/AuthContext';
+import { API_BASE_URL } from '@/config/api';
 
 // Interfaces separadas para mejor mantenibilidad
 interface DaySchedule {
@@ -51,7 +52,6 @@ interface Commerce {
 }
 
 // Constantes para configuración
-const API_BASE_URL = 'http://localhost:5000';
 const API_ENDPOINTS = {
   MY_COMMERCE: `${API_BASE_URL}/api/commerces/my-commerce`,
   UPDATE_COMMERCE: (id: string) => `${API_BASE_URL}/api/commerces/commerce/${id}`,

@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
 
   env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'https://tu-backend.onrender.com'
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || ''
   },
 
   images: {
