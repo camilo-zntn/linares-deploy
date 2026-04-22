@@ -1,16 +1,19 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { MessageCircleQuestion, Bug, Lightbulb, Send, MessageCircle, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '@/context/AuthContext';
 import { API_BASE_URL, apiRoutes } from '@/config/api';
+import { io, Socket } from 'socket.io-client';
 
 interface Message {
   _id: string;
   message: string;
   sender: 'user' | 'admin';
   timestamp: string;
+  senderName?: string;
+  senderEmail?: string;
 }
 
 interface Request {
@@ -92,6 +95,9 @@ export default function HelpPage() {
   const [newMessage, setNewMessage] = useState('');
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [showChat, setShowChat] = useState(false);
+  const [socket, setSocket] = useState<Socket | null>(null);
+  const [currentRoom, setCurrentRoom] = useState<string | null>(null);
+  const activeRequestIdRef = useRef<string | null>(null);
 
   // Función para refrescar la solicitud activa
   const refreshActiveRequest = async () => {
@@ -119,10 +125,11 @@ export default function HelpPage() {
     if (!newMessage.trim() || !activeRequest || isSendingMessage) return;
     
     setIsSendingMessage(true);
+    const requestId = activeRequest._id;
     
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/requests/${activeRequest._id}/messages`, {
+      const response = await fetch(`${API_BASE_URL}/api/requests/${requestId}/messages`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -146,9 +153,13 @@ export default function HelpPage() {
         };
         
         // Actualizar la solicitud activa con el nuevo mensaje
-        setActiveRequest({
-          ...activeRequest,
-          messages: [...(activeRequest.messages || []), newMessageObj]
+        setActiveRequest(prev => {
+          if (!prev) return prev;
+          if (prev._id !== requestId) return prev;
+          return {
+            ...prev,
+            messages: [...(prev.messages || []), newMessageObj]
+          };
         });
         
         setNewMessage('');
@@ -175,31 +186,111 @@ export default function HelpPage() {
       setFormData(prev => ({ ...prev, email: user.email }));
     }
   }, [user]);
+
+  useEffect(() => {
+    activeRequestIdRef.current = activeRequest?._id || null;
+  }, [activeRequest?._id]);
   
+  useEffect(() => {
+    if (!user) return;
+
+    const token = localStorage.getItem('token');
+    const socketInstance = io(API_BASE_URL, {
+      auth: {
+        token,
+        email: user.email
+      },
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+      timeout: 20000,
+      forceNew: true
+    });
+
+    socketInstance.on('connect', () => {
+      const requestId = activeRequestIdRef.current;
+      if (!requestId) return;
+      socketInstance.emit('join_request_room', { requestId, email: user.email });
+      setCurrentRoom(requestId);
+    });
+
+    socketInstance.on('new_message', (data) => {
+      const { requestId, message, status } = data;
+
+      setActiveRequest(prev => {
+        if (!prev || prev._id !== requestId) return prev;
+
+        const prevMessages = prev.messages || [];
+        const exists = prevMessages.some(m => m._id === message._id);
+        if (exists) {
+          return { ...prev, status };
+        }
+
+        return {
+          ...prev,
+          status,
+          messages: [...prevMessages, message]
+        };
+      });
+    });
+
+    socketInstance.on('request_resolved', (data) => {
+      const { requestId, status } = data;
+      setActiveRequest(prev => (prev && prev._id === requestId ? { ...prev, status } : prev));
+    });
+
+    socketInstance.on('request_deleted', (data) => {
+      const { requestId } = data;
+      setActiveRequest(prev => (prev && prev._id === requestId ? null : prev));
+      setShowChat(false);
+    });
+
+    socketInstance.on('error', (err) => {
+      if (err?.message) {
+        toast.error(err.message);
+      }
+    });
+
+    setSocket(socketInstance);
+
+    return () => {
+      socketInstance.disconnect();
+    };
+  }, [user, setActiveRequest]);
+
+  useEffect(() => {
+    if (!socket || !user) return;
+    if (!activeRequest?._id) return;
+
+    if (currentRoom && currentRoom !== activeRequest._id) {
+      socket.emit('leave_request_room', { requestId: currentRoom });
+    }
+
+    socket.emit('join_request_room', { requestId: activeRequest._id, email: user.email });
+    setCurrentRoom(activeRequest._id);
+  }, [socket, user, activeRequest?._id, currentRoom]);
+
   // Efecto para cargar la solicitud más reciente del usuario
   useEffect(() => {
     if (user) {
       loadUserRequest();
-      
-      // Agregar polling solo si hay una solicitud activa de tipo problem
-      let interval: NodeJS.Timeout;
-      if (activeRequest && activeRequest.type === 'problem') {
-        interval = setInterval(() => {
-          refreshActiveRequest();
-        }, 3000);
-      }
-      
-      return () => {
-        if (interval) {
-          clearInterval(interval);
-        }
-      };
     } else {
       // ✅ Si no hay usuario, limpiar solicitud activa
       setActiveRequest(null);
       setShowChat(false);
     }
   }, [user]); // ✅ Dependencia correcta
+
+  useEffect(() => {
+    if (!user) return;
+    if (!activeRequest || activeRequest.type !== 'problem') return;
+
+    const interval = setInterval(() => {
+      refreshActiveRequest();
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [user, activeRequest?._id, activeRequest?.type]);
 
   // Función para cargar solicitud del usuario
   const loadUserRequest = async () => {

@@ -444,7 +444,7 @@ export default function RequestsPage() {
       });
 
       // Agregar listener para errores de sala
-      socket.once('room_error', (error) => {
+      socket.once('error', (error) => {
         console.error('❌ [ROOM] Error al unirse a la sala:', error);
         toast.error('Error al acceder a la solicitud');
       });
